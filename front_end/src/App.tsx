@@ -4,8 +4,9 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 //添加登录页面
 import LoginPage from './pages/Login/Login';
 //添加控制面板(主要功能)页面
-
 import Dashboard from './pages/Dashboard/Dashboard';
+//添加手动排课页面
+import ManualScheduling from './pages/ManualScheduling/ManualScheduling';
 
 function App() {
 
@@ -19,6 +20,7 @@ function App() {
           <Route path="/" element={<WelcomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/manual-scheduling" element={<ManualScheduling />} />
         </Routes>
       </Router>
     </div>

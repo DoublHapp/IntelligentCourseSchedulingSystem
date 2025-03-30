@@ -72,6 +72,29 @@
             color: #7f8c8d;
             margin: 0;
           }
+
+          .menu-item.highlight {
+            border: 2px solid #3498db;
+            background-color: #f8fafc;
+            
+            &:hover {
+              transform: translateY(-5px);
+              box-shadow: 0 8px 20px rgba(52, 152, 219, 0.2);
+            }
+            
+            h3 {
+              color: #2980b9;
+            }
+          }
+          
+          .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 1.2rem;
+            color: #3498db;
+          }
         }
       }
     }

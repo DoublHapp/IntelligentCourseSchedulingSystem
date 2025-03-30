@@ -1,0 +1,272 @@
+.manual-scheduling {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #f5f7fa;
+    
+    .manual-scheduling-header {
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 1rem 2rem;
+      
+      .header-title {
+        display: flex;
+        align-items: center;
+        
+        .back-button {
+          padding: 0.5rem 1rem;
+          background-color: #f8f9fa;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          margin-right: 1rem;
+          cursor: pointer;
+          
+          &:hover {
+            background-color: #e9ecef;
+          }
+        }
+        
+        h1 {
+          margin: 0;
+          font-size: 1.5rem;
+          color: #2c3e50;
+        }
+      }
+    }
+    
+    .manual-scheduling-content {
+      display: flex;
+      padding: 1.5rem;
+      gap: 1.5rem;
+      height: calc(100vh - 4rem);
+      
+      .task-list {
+        flex: 1;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        max-width: 400px;
+        
+        h2 {
+          margin-top: 0;
+          margin-bottom: 1rem;
+          color: #2c3e50;
+          font-size: 1.2rem;
+        }
+        
+        .task-items {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          overflow-y: auto;
+          max-height: calc(100vh - 10rem);
+          
+          .task-item {
+            padding: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            
+            &:hover {
+              border-color: #3498db;
+              transform: translateY(-2px);
+            }
+            
+            &.selected {
+              border-color: #3498db;
+              box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            }
+            
+            &.scheduled {
+              background-color: #f0f8ff;
+              border-left: 4px solid #3498db;
+            }
+            
+            .task-name {
+              font-weight: bold;
+              margin-bottom: 0.5rem;
+              color: #2c3e50;
+            }
+            
+            .task-details {
+              display: flex;
+              flex-direction: column;
+              gap: 0.25rem;
+              font-size: 0.9rem;
+              color: #666;
+            }
+            
+            .task-status {
+              margin-top: 0.5rem;
+              text-align: right;
+              font-size: 0.85rem;
+              font-weight: 500;
+              
+              .scheduled & {
+                color: #3498db;
+              }
+            }
+          }
+        }
+      }
+      
+      .scheduling-panel {
+        flex: 2;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        
+        h2 {
+          margin-top: 0;
+          margin-bottom: 1.5rem;
+          color: #2c3e50;
+          font-size: 1.2rem;
+        }
+        
+        .no-task-selected {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: calc(100% - 3rem);
+          color: #7f8c8d;
+          font-size: 1.1rem;
+        }
+        
+        .scheduling-form {
+          .selected-task-info {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+            
+            h3 {
+              margin-top: 0;
+              margin-bottom: 1rem;
+              font-size: 1.1rem;
+              color: #2c3e50;
+            }
+            
+            .task-info-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+              gap: 0.5rem 1rem;
+              
+              .info-row {
+                display: flex;
+                
+                .info-label {
+                  font-weight: 500;
+                  color: #7f8c8d;
+                  width: 60px;
+                }
+                
+                .info-value {
+                  color: #2c3e50;
+                }
+              }
+            }
+          }
+          
+          .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            
+            .form-group {
+              flex: 1;
+              min-width: 200px;
+              
+              label {
+                display: block;
+                margin-bottom: 0.5rem;
+                font-weight: 500;
+                color: #2c3e50;
+              }
+              
+              select {
+                width: 100%;
+                padding: 0.75rem;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                background-color: white;
+                font-size: 1rem;
+                
+                &:focus {
+                  border-color: #3498db;
+                  outline: none;
+                  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+                }
+              }
+            }
+          }
+          
+          .conflicts-warning {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: #fff5f5;
+            border: 1px solid #fed7d7;
+            border-radius: 4px;
+            
+            h4 {
+              margin-top: 0;
+              margin-bottom: 0.5rem;
+              color: #e53e3e;
+              font-size: 1rem;
+            }
+            
+            ul {
+              margin: 0;
+              padding-left: 1.5rem;
+              color: #e53e3e;
+            }
+          }
+          
+          .error-message {
+            margin-bottom: 1.5rem;
+            padding: 0.75rem;
+            background-color: #fff5f5;
+            border-radius: 4px;
+            color: #e53e3e;
+            text-align: center;
+          }
+          
+          .scheduling-actions {
+            display: flex;
+            gap: 1rem;
+            
+            button {
+              flex: 1;
+              padding: 0.75rem 1rem;
+              border: none;
+              border-radius: 4px;
+              font-size: 1rem;
+              font-weight: 500;
+              cursor: pointer;
+              transition: background-color 0.3s;
+              
+              &.check-button {
+                background-color: #f8f9fa;
+                border: 1px solid #ddd;
+                color: #2c3e50;
+                
+                &:hover {
+                  background-color: #e9ecef;
+                }
+              }
+              
+              &.submit-button {
+                background-color: #3498db;
+                color: white;
+                
+                &:hover {
+                  background-color: #2980b9;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
