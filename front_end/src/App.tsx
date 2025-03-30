@@ -4,9 +4,22 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 //添加登录页面
 import LoginPage from './pages/Login/Login';
 //添加控制面板(主要功能)页面
-import Dashboard from './pages/Dashboard/Dashboard';
+import Dashboard from './pages/DashBoard/DashBoard';
 //添加手动排课页面
 import ManualScheduling from './pages/ManualScheduling/ManualScheduling';
+//添加排课结果页面
+import ScheduleResult from './pages/ScheduleResult/ScheduleResult';
+//添加教室管理页面
+import ClassroomManagement from './pages/ClassroomManagement/ClassroomManagement';
+//添加课程管理页面
+import CourseManagement from './pages/CourseManagement/CourseManagement';
+//添加教师管理页面
+import TeacherManagement from './pages/TeacherManagement/TeacherManagement';
+//添加用户管理页面
+import UserManagement from './pages/UserManagement/UserManagement';
+//添加部门管理页面
+import DepartmentManagement from './pages/DepartmentManagement/DepartmentManagement';
+
 
 function App() {
 
@@ -21,6 +34,13 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/manual-scheduling" element={<ManualScheduling />} />
+          <Route path="/schedule-result" element={<ScheduleResult />} />
+          <Route path="/classroom-management" element={<ClassroomManagement />} />
+          <Route path="/course-management" element={<CourseManagement />} />
+          <Route path="/teacher-management" element={<TeacherManagement />} />
+          <Route path="/user-management" element={<UserManagement />} />
+          <Route path="/department-management" element={<DepartmentManagement />} />
+          
         </Routes>
       </Router>
     </div>

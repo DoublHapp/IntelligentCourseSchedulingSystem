@@ -41,6 +41,32 @@ const Dashboard = () => {
     const navigateToManualScheduling = () => {
         navigate('/manual-scheduling');
     };
+      // 处理跳转到排课结果页面
+      const navigateToScheduleResult = () => {
+        navigate('/schedule-result');
+    };
+
+    //处理跳转到教室管理页面
+    const navigateToClassroomManagement = () => {
+        navigate('/classroom-management');
+    };
+
+    //处理跳转到课程管理页面
+    const navigateToCourseManagement = () => {
+        navigate('/course-management');
+    };
+    //处理跳转到教师管理页面
+    const navigateToTeacherManagement = () => {
+        navigate('/teacher-management');
+    };
+    //处理跳转到用户管理页面
+    const navigateToUserManagement = () => {
+        navigate('/user-management');
+    };
+    //处理跳转到部门管理页面
+    const navigateToDepartmentManagement = () => {
+        navigate('/department-management');
+    };
 
     if (!user) {
         return <div className="loading">加载中...</div>;
@@ -61,19 +87,27 @@ const Dashboard = () => {
                     {/* 根据用户身份显示不同的菜单项 */}
                     {user.userIdentity === 'administrator' && (
                         <>
-                            <div className="menu-item">
+                            <div className="menu-item"
+                            onClick={navigateToDepartmentManagement}
+                            >
                                 <h3>部门管理</h3>
                                 <p>管理学院和系部信息</p>
                             </div>
-                            <div className="menu-item">
+                            <div className="menu-item"
+                            onClick={navigateToTeacherManagement}
+                            >
                                 <h3>教师管理</h3>
                                 <p>管理教师信息和授课安排</p>
                             </div>
-                            <div className="menu-item">
+                            <div className="menu-item"
+                            onClick={navigateToCourseManagement}
+                            >
                                 <h3>课程管理</h3>
                                 <p>管理课程信息和教学计划</p>
                             </div>
-                            <div className="menu-item">
+                            <div className="menu-item"
+                            onClick={navigateToClassroomManagement}
+                            >
                                 <h3>教室管理</h3>
                                 <p>管理教学楼和教室资源</p>
                             </div>
@@ -88,7 +122,15 @@ const Dashboard = () => {
                                 <h3>自动排课</h3>
                                 <p>使用算法自动生成课表</p>
                             </div>
-                            <div className="menu-item">
+                            <div className="menu-item highlight"
+                                onClick={navigateToScheduleResult}
+                            >
+                                <h3>排课结果</h3>
+                                <p>查看课表安排结果</p>
+                            </div>
+                            <div className="menu-item"
+                            onClick={navigateToUserManagement}
+                            >
                                 <h3>用户管理</h3>
                                 <p>管理系统用户和权限</p>
                             </div>
@@ -112,12 +154,20 @@ const Dashboard = () => {
                                 <h3>课程排期</h3>
                                 <p>调整课程时间安排</p>
                             </div>
+
+                            <div className="menu-item highlight"
+                                onClick={navigateToScheduleResult}
+                            >
+                                <h3>排课结果</h3>
+                                <p>查看课表安排结果</p>
+                            </div>
                         </>
                     )}
 
                         {user.userIdentity === 'student' && (
                         <>
-                            <div className="menu-item">
+                            <div className="menu-item"
+                                onClick={navigateToScheduleResult}>
                                 <h3>我的课表</h3>
                                 <p>查看个人课表安排</p>
                             </div>
