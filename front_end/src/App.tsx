@@ -21,6 +21,10 @@ import UserManagement from './pages/UserManagement/UserManagement';
 import DepartmentManagement from './pages/DepartmentManagement/DepartmentManagement';
 //添加个性化申请页面
 import PersonalizedRequest from './pages/PersonalizedRequest/PersonalizedRequest';
+//添加排课结果分析页面
+import ScheduleResultAnalysis from './pages/ScheduleResultAnalysis/ScheduleResultAnalysis';
+
+
 
 function App() {
 
@@ -42,6 +46,7 @@ function App() {
           <Route path="/user-management" element={<UserManagement />} />
           <Route path="/department-management" element={<DepartmentManagement />} />
           <Route path="/personalized-request" element={<PersonalizedRequest />} />
+          <Route path="/schedule-result-analysis" element={<ScheduleResultAnalysis />} />
         </Routes>
       </Router>
     </div>

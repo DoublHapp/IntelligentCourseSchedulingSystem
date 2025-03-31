@@ -73,6 +73,11 @@ const Dashboard = () => {
         navigate('/personalized-request');
     }
 
+    //处理跳转到排课结果分析页面
+    const navigateToScheduleResultAnalysis = () => {
+        navigate('/schedule-result-analysis');
+    }
+
     if (!user) {
         return <div className="loading">加载中...</div>;
     }
@@ -132,6 +137,13 @@ const Dashboard = () => {
                             >
                                 <h3>排课结果</h3>
                                 <p>查看课表安排结果</p>
+                            </div>
+
+                            <div className="menu-item highlight"
+                                onClick={navigateToScheduleResultAnalysis}
+                            >
+                                <h3>排课结果分析</h3>
+                                <p>深度分析排课结果数据与资源利用情况</p>
                             </div>
                             <div className="menu-item"
                                 onClick={navigateToUserManagement}

@@ -1,203 +1,501 @@
 .schedule-result {
-    width: 100%;
-    min-height: 100vh;
-    background-color: #f5f7fa;
-    
-    .schedule-header {
-      background-color: #fff;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      padding: 1rem 2rem;
-      
-      .header-title {
-        display: flex;
-        align-items: center;
-        
-        .back-button {
-          padding: 0.5rem 1rem;
-          background-color: #f8f9fa;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          margin-right: 1rem;
-          cursor: pointer;
-          
-          &:hover {
-            background-color: #e9ecef;
-          }
-        }
-        
-        h1 {
-          margin: 0;
-          font-size: 1.5rem;
-          color: #2c3e50;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+
+  .schedule-header {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1rem 2rem;
+
+    .header-title {
+      display: flex;
+      align-items: center;
+
+      .back-button {
+        padding: 0.5rem 1rem;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-right: 1rem;
+        cursor: pointer;
+
+        &:hover {
+          background-color: #e9ecef;
         }
       }
-    }
-    
-    .schedule-content {
-      padding: 1.5rem;
-      max-width: 1200px;
-      margin: 0 auto;
-      
-      .schedule-filter {
-        background-color: white;
-        padding: 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        margin-bottom: 1.5rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1.5rem;
-        
-        .filter-type {
-          flex: 1;
-          min-width: 300px;
-          
-          span {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #2c3e50;
-          }
-          
-          .type-buttons {
-            display: flex;
-            gap: 0.5rem;
-            
-            .type-button {
-              padding: 0.5rem 1rem;
-              border: 1px solid #ddd;
-              border-radius: 4px;
-              background-color: white;
-              color: #2c3e50;
-              cursor: pointer;
-              transition: all 0.3s;
-              
-              &:hover {
-                background-color: #f8f9fa;
-              }
-              
-              &.active {
-                background-color: #3498db;
-                color: white;
-                border-color: #3498db;
-              }
-            }
-          }
-        }
-        
-        .filter-selection {
-          flex: 1;
-          min-width: 300px;
-          
-          label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #2c3e50;
-          }
-          
-          select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: white;
-            font-size: 1rem;
-            
-            &:focus {
-              border-color: #3498db;
-              outline: none;
-              box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-            }
-          }
-        }
-      }
-      
-      .schedule-title {
+
+      h1 {
+        margin: 0;
         font-size: 1.5rem;
-        font-weight: 500;
-        text-align: center;
-        margin: 1.5rem 0;
         color: #2c3e50;
-      }
-      
-      .no-selection {
-        text-align: center;
-        padding: 3rem;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        color: #7f8c8d;
-        font-size: 1.1rem;
-      }
-      
-      .loading {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 200px;
-        font-size: 1.2rem;
-        color: #3498db;
-      }
-      
-      .schedule-table-container {
-        overflow-x: auto;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        padding: 1rem;
-        
-        .schedule-table {
-          width: 100%;
-          border-collapse: collapse;
-          
-          th, td {
-            border: 1px solid #e0e0e0;
-            padding: 1rem;
-            text-align: center;
-          }
-          
-          th {
-            background-color: #f8f9fa;
-            color: #2c3e50;
-            font-weight: 500;
-          }
-          
-          .time-header, .time-cell {
-            background-color: #f8f9fa;
-            white-space: nowrap;
-            width: 80px;
-          }
-          
-          .course-cell {
-            width: 18%;
-            height: 120px;
-            vertical-align: top;
-            transition: background-color 0.3s;
-            
-            &.has-course {
-              background-color: #eaf7ff;
-            }
-            
-            .course-content {
-              display: flex;
-              flex-direction: column;
-              height: 100%;
-              
-              .course-name {
-                font-weight: 500;
-                color: #3498db;
-                margin-bottom: 0.5rem;
-              }
-              
-              .course-teacher, .course-classroom, .course-week {
-                font-size: 0.85rem;
-                color: #7f8c8d;
-                margin-bottom: 0.25rem;
-              }
-            }
-          }
-        }
       }
     }
   }
+
+  .schedule-content {
+    padding: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+
+    .schedule-filter {
+      background-color: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+
+      .filter-type {
+        flex: 1;
+        min-width: 300px;
+
+        span {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 500;
+          color: #2c3e50;
+        }
+
+        .type-buttons {
+          display: flex;
+          gap: 0.5rem;
+
+          .type-button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: all 0.3s;
+
+            &:hover {
+              background-color: #f8f9fa;
+            }
+
+            &.active {
+              background-color: #3498db;
+              color: white;
+              border-color: #3498db;
+            }
+          }
+        }
+      }
+
+      .filter-selection {
+        flex: 1;
+        min-width: 300px;
+
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 500;
+          color: #2c3e50;
+        }
+
+        select {
+          width: 100%;
+          padding: 0.75rem;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          background-color: white;
+          font-size: 1rem;
+
+          &:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+          }
+        }
+      }
+    }
+
+    .schedule-title {
+      font-size: 1.5rem;
+      font-weight: 500;
+      text-align: center;
+      margin: 1.5rem 0;
+      color: #2c3e50;
+    }
+
+    .no-selection {
+      text-align: center;
+      padding: 3rem;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      color: #7f8c8d;
+      font-size: 1.1rem;
+    }
+
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 200px;
+      font-size: 1.2rem;
+      color: #3498db;
+    }
+
+    .schedule-table-container {
+      overflow-x: auto;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 1rem;
+
+      .schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+
+        th,
+        td {
+          border: 1px solid #e0e0e0;
+          padding: 1rem;
+          text-align: center;
+        }
+
+        th {
+          position: sticky;
+          top: 0;
+          z-index: 1;
+          background-color: #f8f9fa;
+          color: #2c3e50;
+          font-weight: 500;
+        }
+
+        .time-header,
+        .time-cell {
+          background-color: #f8f9fa;
+          white-space: nowrap;
+          width: 80px;
+        }
+
+        .course-cell {
+          width: 18%;
+          height: 120px;
+          vertical-align: top;
+          transition: all 0.2s;
+
+          &.has-course {
+            &:hover {
+              background-color: #d4e6f1;
+              transform: scale(1.02);
+              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+              z-index: 2;
+              cursor: pointer;
+            }
+          }
+
+          .course-conflict-indicator {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 10px;
+            height: 10px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+          }
+
+
+          .course-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+
+            .course-name {
+              font-weight: 500;
+              color: #3498db;
+              margin-bottom: 0.5rem;
+            }
+
+            .course-teacher,
+            .course-classroom,
+            .course-week {
+              font-size: 0.85rem;
+              color: #7f8c8d;
+              margin-bottom: 0.25rem;
+            }
+          }
+        }
+      }
+    }
+
+    // 优化月视图
+    .month-view {
+      .month-week {
+        margin-bottom: 2rem;
+
+        h3 {
+          position: sticky;
+          top: 0;
+          background-color: white;
+          padding: 0.5rem;
+          margin: 0;
+          border-bottom: 1px solid #eee;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+          z-index: 3;
+        }
+      }
+
+      .month-day {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        overflow: hidden;
+
+        &:hover {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .month-day-header {
+          background-color: #ebf5fb;
+          padding: 0.5rem;
+          text-align: center;
+          font-weight: 500;
+        }
+
+        .month-day-courses {
+          max-height: 300px;
+          overflow-y: auto;
+          padding: 0.5rem;
+
+          &::-webkit-scrollbar {
+            width: 4px;
+          }
+
+          &::-webkit-scrollbar-thumb {
+            background-color: #bdc3c7;
+            border-radius: 4px;
+          }
+        }
+      }
+
+      .month-course {
+        position: relative;
+        transition: all 0.2s;
+
+        &.math {
+          border-left: 4px solid #3498db;
+        }
+
+        &.cs {
+          border-left: 4px solid #2ecc71;
+        }
+
+        &.physics {
+          border-left: 4px solid #f39c12;
+        }
+
+        &.language {
+          border-left: 4px solid #9b59b6;
+        }
+
+        &.other {
+          border-left: 4px solid #e74c3c;
+        }
+      }
+    }
+
+    // 优化学期视图
+    .semester-view {
+      .semester-courses-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+
+        .semester-course-card {
+          transition: all 0.3s;
+
+          &:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+          }
+
+          &.math {
+            border-top: 4px solid #3498db;
+          }
+
+          &.cs {
+            border-top: 4px solid #2ecc71;
+          }
+
+          &.physics {
+            border-top: 4px solid #f39c12;
+          }
+
+          &.language {
+            border-top: 4px solid #9b59b6;
+          }
+
+          &.other {
+            border-top: 4px solid #e74c3c;
+          }
+        }
+      }
+    }
+
+    // 强化详情模态框
+    .course-detail-modal {
+      .course-detail-content {
+        border-radius: 12px;
+        max-width: 550px;
+        animation: fadeIn 0.3s ease-in-out;
+
+        .course-stats {
+          display: flex;
+          justify-content: space-between;
+          background-color: #f8f9fa;
+          padding: 1rem;
+          border-radius: 8px;
+          margin: 1rem 0;
+
+          .stat-item {
+            text-align: center;
+
+            .stat-value {
+              font-size: 1.5rem;
+              font-weight: 600;
+              color: #3498db;
+            }
+
+            .stat-label {
+              font-size: 0.85rem;
+              color: #7f8c8d;
+            }
+          }
+        }
+
+        .course-actions {
+          display: flex;
+          gap: 1rem;
+
+          .action-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+
+            svg {
+              width: 18px;
+              height: 18px;
+            }
+          }
+        }
+      }
+    }
+
+    // 添加响应式设计增强
+    @media screen and (max-width: 768px) {
+      .schedule-filter {
+        flex-direction: column;
+
+        .filter-type,
+        .filter-selection {
+          width: 100%;
+        }
+      }
+
+      .month-days {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .view-controls {
+        flex-direction: column;
+
+        .view-modes,
+        .search-bar,
+        .week-selector,
+        .month-selector {
+          width: 100%;
+          margin-bottom: 1rem;
+        }
+      }
+    }
+
+    // 添加过渡动画
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .schedule-view {
+      animation: fadeIn 0.3s;
+    }
+
+    // 新增图例组件样式
+    .schedule-legend {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+      h4 {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+      }
+
+      .legend-items {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+
+        .legend-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+
+          .color-indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+          }
+        }
+      }
+    }
+
+    // 新增可打印样式
+    @media print {
+
+      .schedule-header,
+      .schedule-controls,
+      .course-actions,
+      .close-modal-btn {
+        display: none !important;
+      }
+
+      .schedule-content {
+        padding: 0 !important;
+      }
+
+      .schedule-table-container {
+        overflow: visible !important;
+        box-shadow: none !important;
+      }
+
+      .schedule-table th,
+      .schedule-table td {
+        border: 1px solid #000 !important;
+      }
+
+      .course-cell.has-course:hover {
+        transform: none !important;
+        box-shadow: none !important;
+      }
+    }
+
+  }
+}
