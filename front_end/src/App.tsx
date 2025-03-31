@@ -19,7 +19,8 @@ import TeacherManagement from './pages/TeacherManagement/TeacherManagement';
 import UserManagement from './pages/UserManagement/UserManagement';
 //添加部门管理页面
 import DepartmentManagement from './pages/DepartmentManagement/DepartmentManagement';
-
+//添加个性化申请页面
+import PersonalizedRequest from './pages/PersonalizedRequest/PersonalizedRequest';
 
 function App() {
 
@@ -29,7 +30,7 @@ function App() {
       {/* 添加路由导航 */}
       <Router>
         <Routes>
-          
+
           <Route path="/" element={<WelcomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -40,7 +41,7 @@ function App() {
           <Route path="/teacher-management" element={<TeacherManagement />} />
           <Route path="/user-management" element={<UserManagement />} />
           <Route path="/department-management" element={<DepartmentManagement />} />
-          
+          <Route path="/personalized-request" element={<PersonalizedRequest />} />
         </Routes>
       </Router>
     </div>

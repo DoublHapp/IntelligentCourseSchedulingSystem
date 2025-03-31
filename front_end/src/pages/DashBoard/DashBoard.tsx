@@ -1,4 +1,4 @@
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.scss';
 
@@ -7,12 +7,12 @@ interface User {
     id: number;
     username: string;
     userIdentity: string;
-  }
+}
 
 const Dashboard = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
-    
+
     useEffect(() => {
         // 检查用户是否已登录
         const userStr = localStorage.getItem('user');
@@ -31,7 +31,7 @@ const Dashboard = () => {
             navigate('/login');
         }
     }, [navigate]);
-    
+
     // 处理退出登录
     const handleLogout = () => {
         localStorage.removeItem('user');
@@ -41,8 +41,8 @@ const Dashboard = () => {
     const navigateToManualScheduling = () => {
         navigate('/manual-scheduling');
     };
-      // 处理跳转到排课结果页面
-      const navigateToScheduleResult = () => {
+    // 处理跳转到排课结果页面
+    const navigateToScheduleResult = () => {
         navigate('/schedule-result');
     };
 
@@ -68,6 +68,11 @@ const Dashboard = () => {
         navigate('/department-management');
     };
 
+    //处理跳转到个性化申请页面
+    const navigateToPersonalizedRequest = () => {
+        navigate('/personalized-request');
+    }
+
     if (!user) {
         return <div className="loading">加载中...</div>;
     }
@@ -75,43 +80,43 @@ const Dashboard = () => {
     return (
         <div className="dashboard">
             <header className="dashboard-header">
-                <h1>控制面板-{user.username}({user.userIdentity==='administrator'?'管理员':user.userIdentity==='teacher'?'教师':'学生'})</h1>
+                <h1>控制面板-{user.username}({user.userIdentity === 'administrator' ? '管理员' : user.userIdentity === 'teacher' ? '教师' : '学生'})</h1>
 
                 <button onClick={handleLogout} className="logout-button">退出登录</button>
             </header>
             <main className="dashboard-content">
                 <h2>欢迎使用智能排课系统管理界面</h2>
                 <p>在这里您可以管理课程、教师、教室等资源</p>
-                
+
                 <div className="dashboard-menu">
                     {/* 根据用户身份显示不同的菜单项 */}
                     {user.userIdentity === 'administrator' && (
                         <>
                             <div className="menu-item"
-                            onClick={navigateToDepartmentManagement}
+                                onClick={navigateToDepartmentManagement}
                             >
                                 <h3>部门管理</h3>
                                 <p>管理学院和系部信息</p>
                             </div>
                             <div className="menu-item"
-                            onClick={navigateToTeacherManagement}
+                                onClick={navigateToTeacherManagement}
                             >
                                 <h3>教师管理</h3>
                                 <p>管理教师信息和授课安排</p>
                             </div>
                             <div className="menu-item"
-                            onClick={navigateToCourseManagement}
+                                onClick={navigateToCourseManagement}
                             >
                                 <h3>课程管理</h3>
                                 <p>管理课程信息和教学计划</p>
                             </div>
                             <div className="menu-item"
-                            onClick={navigateToClassroomManagement}
+                                onClick={navigateToClassroomManagement}
                             >
                                 <h3>教室管理</h3>
                                 <p>管理教学楼和教室资源</p>
                             </div>
-                            <div 
+                            <div
                                 className="menu-item highlight"
                                 onClick={navigateToManualScheduling}
                             >
@@ -129,7 +134,7 @@ const Dashboard = () => {
                                 <p>查看课表安排结果</p>
                             </div>
                             <div className="menu-item"
-                            onClick={navigateToUserManagement}
+                                onClick={navigateToUserManagement}
                             >
                                 <h3>用户管理</h3>
                                 <p>管理系统用户和权限</p>
@@ -137,22 +142,18 @@ const Dashboard = () => {
                         </>
                     )}
 
-                       {user.userIdentity === 'teacher' && (
+                    {user.userIdentity === 'teacher' && (
                         <>
-                            <div className="menu-item">
-                                <h3>我的课表</h3>
-                                <p>查看个人教学安排</p>
-                            </div>
                             <div className="menu-item">
                                 <h3>我的课程</h3>
                                 <p>管理教授的课程</p>
                             </div>
-                            <div 
+                            <div
                                 className="menu-item highlight"
-                                onClick={navigateToManualScheduling}
+                                onClick={navigateToPersonalizedRequest}
                             >
-                                <h3>课程排期</h3>
-                                <p>调整课程时间安排</p>
+                                <h3>个性化申请</h3>
+                                <p>申请调整课程时间安排</p>
                             </div>
 
                             <div className="menu-item highlight"
@@ -164,22 +165,24 @@ const Dashboard = () => {
                         </>
                     )}
 
-                        {user.userIdentity === 'student' && (
+                    {user.userIdentity === 'student' && (
                         <>
                             <div className="menu-item"
                                 onClick={navigateToScheduleResult}>
                                 <h3>我的课表</h3>
                                 <p>查看个人课表安排</p>
                             </div>
-                            <div className="menu-item">
-                                <h3>选修课程</h3>
-                                <p>选择选修课程</p>
+                            <div className="menu-item highlight"
+                                onClick={navigateToPersonalizedRequest}
+                            >
+                                <h3>个性化申请</h3>
+                                <p>申请调整课程时间安排</p>
                             </div>
                         </>
                     )}
 
 
-                    
+
                 </div>
             </main>
         </div>
