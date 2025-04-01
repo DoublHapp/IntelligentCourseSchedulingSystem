@@ -90,8 +90,8 @@ const Dashboard = () => {
                 <button onClick={handleLogout} className="logout-button">退出登录</button>
             </header>
             <main className="dashboard-content">
-                <h2>欢迎使用智能排课系统管理界面</h2>
-                <p>在这里您可以管理课程、教师、教室等资源</p>
+                <h2>欢迎使用智能排课系统功能界面</h2>
+                <p>在这里您可以使用查看排课结果、导出课表等功能</p>
 
                 <div className="dashboard-menu">
                     {/* 根据用户身份显示不同的菜单项 */}

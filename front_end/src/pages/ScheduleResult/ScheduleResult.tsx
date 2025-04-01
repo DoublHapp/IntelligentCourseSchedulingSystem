@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ScheduleResult.scss';
+//导出课表相关
+import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
 
 // 课程安排类型定义
 interface CourseSchedule {
@@ -38,6 +41,10 @@ const ScheduleResult = () => {
   const [showCourseDetail, setShowCourseDetail] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // 添加导出相关的状态
+  const [showExportOptions, setShowExportOptions] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
 
   // 检查用户登录状态
   useEffect(() => {
@@ -368,7 +375,7 @@ const ScheduleResult = () => {
   // 渲染周视图
   const renderWeekView = () => {
     return (
-      <div className="schedule-table-container">
+      <div className="schedule-table-container" ref={exportRef}>
         <table className="schedule-table">
           <thead>
             <tr>
@@ -439,7 +446,7 @@ const ScheduleResult = () => {
     const weeksInMonth = monthWeekRanges[currentMonth] || [1, 2, 3, 4];
 
     return (
-      <div className="month-view">
+      <div className="month-view" ref={exportRef}>
         {weeksInMonth.map(week => (
           <div key={week} className="month-week">
             <h3>第{week}周</h3>
@@ -482,7 +489,7 @@ const ScheduleResult = () => {
     });
 
     return (
-      <div className="semester-view">
+      <div className="semester-view" ref={exportRef}>
         <div className="semester-courses-container">
           {Object.entries(coursesByName).map(([courseName, courses]) => (
             <div key={courseName} className="semester-course-card">
@@ -518,6 +525,185 @@ const ScheduleResult = () => {
       </div>
     );
   };
+
+
+  // 添加导出和打印功能
+  const handlePrint = () => {
+    window.print();
+  };
+
+
+  // PDF导出 (需要安装依赖: html2canvas和jspdf)
+  const handleExportPDF = async () => {
+    try {
+      // 动态导入html2canvas和jspdf以降低初始加载体积
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      if (exportRef.current) {
+        // 创建一个显示提示的函数
+        const showExportingMessage = () => {
+          const message = document.createElement('div');
+          message.className = 'export-message';
+          message.textContent = '正在导出，请稍候...';
+          document.body.appendChild(message);
+          return message;
+        };
+
+        const messageElement = showExportingMessage();
+
+        // 获取导出的内容
+        const canvas = await html2canvas(exportRef.current, {
+          scale: 2,
+          useCORS: true,
+          logging: false
+        });
+
+        // 创建PDF
+        const pdf = new jsPDF({
+          orientation: viewMode === 'week' ? 'landscape' : 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = pdf.internal.pageSize.getWidth();
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+
+        // 获取文件名
+        const typeName = scheduleType === 'class' ? '班级' : scheduleType === 'teacher' ? '教师' : '教室';
+        const targetName = scheduleType === 'class' ? classes.find(c => c.id === selectedId)?.name :
+          scheduleType === 'teacher' ? teachers.find(t => t.id === selectedId)?.name :
+            classrooms.find(c => c.id === selectedId)?.name;
+        const viewTypeName = viewMode === 'week' ? `第${currentWeek}周` :
+          viewMode === 'month' ? `${currentMonth}月` : '学期';
+
+        const fileName = `${typeName}-${targetName}-${viewTypeName}课表.pdf`;
+        pdf.save(fileName);
+
+        // 移除提示消息
+        document.body.removeChild(messageElement);
+      }
+    } catch (error) {
+      console.error('导出PDF时出错:', error);
+      alert('导出PDF失败，请稍后重试');
+    }
+  };
+
+  // Excel导出
+  const handleExportExcel = () => {
+    try {
+      // 准备数据
+      const exportData = [];
+
+      if (viewMode === 'week') {
+        // 周视图导出
+        const header = ['时间段', '周一', '周二', '周三', '周四', '周五'];
+        exportData.push(header);
+
+        [0, 1, 2, 3, 4].forEach(period => {
+          const row = [getPeriodName(period)];
+          [1, 2, 3, 4, 5].forEach(day => {
+            const course = weekScheduleMatrix[day - 1][period];
+            row.push(course ? `${course.courseName}\n${course.teacherName}\n${course.classroom}` : '');
+          });
+          exportData.push(row);
+        });
+      } else {
+        // 月视图或学期视图导出为课程列表
+        exportData.push(['课程名称', '教师', '教室', '周次', '星期', '节次', '班级']);
+
+        const coursesToExport = viewMode === 'month' ? monthScheduleCourses : semesterScheduleCourses;
+        coursesToExport.forEach(course => {
+          exportData.push([
+            course.courseName,
+            course.teacherName,
+            course.classroom,
+            `第${course.week}周`,
+            getDayName(course.day),
+            getPeriodName(course.period),
+            course.classNames.join(', ')
+          ]);
+        });
+      }
+
+      // 创建工作表
+      const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+      // 创建工作簿并添加工作表
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '课表');
+
+      // 获取文件名
+      const typeName = scheduleType === 'class' ? '班级' : scheduleType === 'teacher' ? '教师' : '教室';
+      const targetName = scheduleType === 'class' ? classes.find(c => c.id === selectedId)?.name :
+        scheduleType === 'teacher' ? teachers.find(t => t.id === selectedId)?.name :
+          classrooms.find(c => c.id === selectedId)?.name;
+      const viewTypeName = viewMode === 'week' ? `第${currentWeek}周` :
+        viewMode === 'month' ? `${currentMonth}月` : '学期';
+
+      const fileName = `${typeName}-${targetName}-${viewTypeName}课表.xlsx`;
+
+      // 导出工作簿
+      XLSX.writeFile(wb, fileName);
+    } catch (error) {
+      console.error('导出Excel时出错:', error);
+      alert('导出Excel失败，请稍后重试');
+    }
+  };
+
+  // CSV导出
+  const handleExportCSV = () => {
+    try {
+      // 准备数据
+      let csvContent = '';
+
+      if (viewMode === 'week') {
+        // 周视图导出
+        csvContent += '时间段,周一,周二,周三,周四,周五\n';
+
+        [0, 1, 2, 3, 4].forEach(period => {
+          let row = `${getPeriodName(period)},`;
+          [1, 2, 3, 4, 5].forEach(day => {
+            const course = weekScheduleMatrix[day - 1][period];
+            row += course ? `"${course.courseName} - ${course.teacherName} - ${course.classroom}"` : '';
+            row += day < 5 ? ',' : '';
+          });
+          csvContent += row + '\n';
+        });
+      } else {
+        // 月视图或学期视图导出为课程列表
+        csvContent += '课程名称,教师,教室,周次,星期,节次,班级\n';
+
+        const coursesToExport = viewMode === 'month' ? monthScheduleCourses : semesterScheduleCourses;
+        coursesToExport.forEach(course => {
+          csvContent += `"${course.courseName}","${course.teacherName}","${course.classroom}","第${course.week}周","${getDayName(course.day)}","${getPeriodName(course.period)}","${course.classNames.join(', ')}"\n`;
+        });
+      }
+
+      // 创建Blob对象
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+      // 获取文件名
+      const typeName = scheduleType === 'class' ? '班级' : scheduleType === 'teacher' ? '教师' : '教室';
+      const targetName = scheduleType === 'class' ? classes.find(c => c.id === selectedId)?.name :
+        scheduleType === 'teacher' ? teachers.find(t => t.id === selectedId)?.name :
+          classrooms.find(c => c.id === selectedId)?.name;
+      const viewTypeName = viewMode === 'week' ? `第${currentWeek}周` :
+        viewMode === 'month' ? `${currentMonth}月` : '学期';
+
+      const fileName = `${typeName}-${targetName}-${viewTypeName}课表.csv`;
+
+      // 导出CSV
+      saveAs(blob, fileName);
+    } catch (error) {
+      console.error('导出CSV时出错:', error);
+      alert('导出CSV失败，请稍后重试');
+    }
+  };
+
 
   return (
     <div className="schedule-result">
@@ -655,6 +841,37 @@ const ScheduleResult = () => {
             </div>
           )}
         </div>
+
+        {selectedId && (
+          <div className="export-controls">
+            <button
+              className="control-button"
+              onClick={() => setShowExportOptions(!showExportOptions)}
+            >
+              <i className="fas fa-download"></i> 导出课表
+            </button>
+            <button
+              className="control-button"
+              onClick={handlePrint}
+            >
+              <i className="fas fa-print"></i> 打印课表
+            </button>
+
+            {showExportOptions && (
+              <div className="export-options">
+                <button onClick={handleExportPDF}>
+                  导出为 PDF
+                </button>
+                <button onClick={handleExportExcel}>
+                  导出为 Excel
+                </button>
+                <button onClick={handleExportCSV}>
+                  导出为 CSV
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {loading ? (
           <div className="loading">加载中...</div>
