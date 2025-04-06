@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import{useNavigate} from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './LoginForm.scss';
 
 // 定义用户角色类型
@@ -56,13 +56,13 @@ const LoginForm = () => {
                 }),
             });
 
-            const data: LoginResponse = await response.json();
+            const data = await response.json();
 
-            if (data.success && data.user) {
+            if (data.success && data.data) {
                 // 登录成功，保存用户信息到本地存储
-                localStorage.setItem('user', JSON.stringify(data.user));
-                
-               // 都导航到Dashboard页面
+                localStorage.setItem('user', JSON.stringify(data.data));
+
+                // 都导航到Dashboard页面
                 navigate('/dashboard');
             } else {
                 setError(data.message || '登录失败，请检查您的凭据');
@@ -75,66 +75,66 @@ const LoginForm = () => {
         }
     };
 
-    
+
 
     return (
         <div className="login-form-container">
-        <div className="login-form">
-            <h2>智能排课系统</h2>
-            <h3>用户登录</h3>
+            <div className="login-form">
+                <h2>智能排课系统</h2>
+                <h3>用户登录</h3>
 
-            {error && <div className="error-message">{error}</div>}
+                {error && <div className="error-message">{error}</div>}
 
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label htmlFor="role">用户角色</label>
-                    <select
-                        id="role"
-                        value={role}
-                        onChange={(e) => setRole(e.target.value as UserRole)}
-                        className="form-control"
-                        disabled={isLoading}
-                    >
-                        <option value="student">学生</option>
-                        <option value="teacher">教师</option>
-                        <option value="administrator">管理员</option>
-                    </select>
-                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label htmlFor="role">用户角色</label>
+                        <select
+                            id="role"
+                            value={role}
+                            onChange={(e) => setRole(e.target.value as UserRole)}
+                            className="form-control"
+                            disabled={isLoading}
+                        >
+                            <option value="student">学生</option>
+                            <option value="teacher">教师</option>
+                            <option value="administrator">管理员</option>
+                        </select>
+                    </div>
 
-                <div className="form-group">
-                    <label htmlFor="username">用户名</label>
-                    <input
-                        type="text"
-                        id="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="请输入用户名"
-                        className="form-control"
-                        disabled={isLoading}
-                    />
-                </div>
+                    <div className="form-group">
+                        <label htmlFor="username">用户名</label>
+                        <input
+                            type="text"
+                            id="username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="请输入用户名"
+                            className="form-control"
+                            disabled={isLoading}
+                        />
+                    </div>
 
-                <div className="form-group">
-                    <label htmlFor="password">密码</label>
-                    <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="请输入密码"
-                        className="form-control"
-                        disabled={isLoading}
-                    />
-                </div>
+                    <div className="form-group">
+                        <label htmlFor="password">密码</label>
+                        <input
+                            type="password"
+                            id="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="请输入密码"
+                            className="form-control"
+                            disabled={isLoading}
+                        />
+                    </div>
 
-                <button type="submit" className="login-button" disabled={isLoading}>
-                    {isLoading ? '登录中...' : '登录'}
-                </button>
-            </form>
+                    <button type="submit" className="login-button" disabled={isLoading}>
+                        {isLoading ? '登录中...' : '登录'}
+                    </button>
+                </form>
 
-          
+
+            </div>
         </div>
-    </div>
     );
 };
 

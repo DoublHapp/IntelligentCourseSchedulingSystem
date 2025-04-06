@@ -1,68 +1,81 @@
 package com.example.back_end.service;
 
-import com.example.back_end.dto.LoginRequest;
-import com.example.back_end.dto.LoginResponse;
-import com.example.back_end.dto.UserDTO;
 import com.example.back_end.entity.User;
 import com.example.back_end.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class UserService {
+    
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     
-    @Autowired
-    public UserService(UserRepository userRepository) {
+    
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
     
-    public LoginResponse login(LoginRequest loginRequest) {
-        Optional<User> userOptional = userRepository.findByUsernameAndPasswordAndUserIdentity(
-                loginRequest.getUsername(), 
-                loginRequest.getPassword(), 
-                loginRequest.getUserIdentity()
-        );
-        
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            UserDTO userDTO = new UserDTO();
-            userDTO.setId(user.getId());
-            userDTO.setUsername(user.getUsername());
-            userDTO.setUserIdentity(user.getUserIdentity());
-            
-            return LoginResponse.success(userDTO);
-        } else {
-            return LoginResponse.error("用户名或密码错误，或者选择的用户身份不匹配");
+    public List<User> findAll() {
+        return userRepository.findAll();
+    }
+    
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
+    }
+    
+    public Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+    
+    public User save(User user) {
+        if (user.getPassword() != null && !user.getPassword().isEmpty() && !user.getPassword().startsWith("$2a$")) {
+            // 如果密码不为空且不是已经加密的格式，则进行加密
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
+        return userRepository.save(user);
     }
     
+    public void deleteById(Long id) {
+        userRepository.deleteById(id);
+    }
+    
+    // 初始化默认用户
     public void initDefaultUsers() {
-        // 如果没有任何用户，创建默认用户
-        if (userRepository.count() == 0) {
-            // 创建管理员用户
+           Optional<User> existingAdmin = userRepository.findByUsername("admin");
+        
+        if (existingAdmin.isEmpty()) {
             User admin = new User();
             admin.setUsername("admin");
-            admin.setPassword("password");
+            admin.setPassword(passwordEncoder.encode("password"));
             admin.setUserIdentity("administrator");
+            admin.setRole(User.Role.admin);
+            admin.setCreatedAt(LocalDateTime.now());
             userRepository.save(admin);
-            
-            // 创建教师用户
-            User teacher = new User();
-            teacher.setUsername("teacher");
-            teacher.setPassword("password");
-            teacher.setUserIdentity("teacher");
-            userRepository.save(teacher);
-            
-            // 创建学生用户
-            User student = new User();
-            student.setUsername("student");
-            student.setPassword("password");
-            student.setUserIdentity("student");
-            userRepository.save(student);
+            System.out.println("已创建默认管理员用户: admin/password");
+        } else {
+            // 检查现有管理员密码是否为BCrypt格式，如果不是则更新
+            User admin = existingAdmin.get();
+            if (!admin.getPassword().startsWith("$2a$")) {
+                admin.setPassword(passwordEncoder.encode("password"));
+                userRepository.save(admin);
+                System.out.println("已更新管理员密码为BCrypt格式");
+            }
         }
     }
-
+    
+    // 用户认证
+    public boolean authenticate(String username, String password) {
+        Optional<User> userOptional = userRepository.findByUsername(username);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            return passwordEncoder.matches(password, user.getPassword());
+        }
+        return false;
+    }
 }

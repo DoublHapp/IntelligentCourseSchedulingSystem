@@ -59,6 +59,11 @@
         <artifactId>lombok</artifactId>
         <optional>true</optional>
     </dependency>
+    <!-- Spring Security 是 Spring 框架提供的安全解决方案，用于身份验证和授权功能 -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
 
     </dependencies>
 

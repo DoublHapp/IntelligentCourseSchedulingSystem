@@ -1,29 +1,52 @@
 package com.example.back_end.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Entity
 @Table(name = "users")
-
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
-
+    
     @Id
-    @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(unique = true,nullable = false)
+    
     private String username;
-
-    @Column(nullable = false)
+    
     private String password;
+    
+    @Enumerated(EnumType.STRING)
+    private Role role;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    @Column(name = "user_identity",nullable = false)
-    private String userIdentity;//标识用户身份->student, teacher, administrator
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+    
+    @Column(name = "user_identity")
+    private String userIdentity;
+    
+    public enum Role {
+        student, teacher, admin
+    }
 }
