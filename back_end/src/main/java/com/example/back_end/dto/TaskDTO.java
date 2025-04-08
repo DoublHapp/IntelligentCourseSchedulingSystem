@@ -30,7 +30,7 @@ public class TaskDTO {
     private String campusOfCourseOffering;
     private String isExternalHire;
     private String courseOfferingDepartment;
-    private String courseWeeklyHours;
+    private String courseWeeklyScheduleHours;
     private Integer consecutiveClassSlots;
     private String designatedClassroomType;
     private String designatedClassroom;

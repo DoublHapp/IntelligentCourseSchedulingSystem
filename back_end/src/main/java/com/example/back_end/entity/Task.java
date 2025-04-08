@@ -76,8 +76,8 @@ public class Task {
     @Column(name = "course_offering_department")
     private String courseOfferingDepartment;
 
-    @Column(name = "course_weekly_hours")
-    private String courseWeeklyHours;
+    @Column(name = "course_weekly_schedule_hours")
+    private String courseWeeklyScheduleHours;
 
     @Column(name = "consecutive_class_slots")
     private Integer consecutiveClassSlots;

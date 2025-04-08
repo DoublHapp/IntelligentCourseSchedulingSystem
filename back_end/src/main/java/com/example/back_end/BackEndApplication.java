@@ -21,7 +21,7 @@ public class BackEndApplication {
         SpringApplication.run(BackEndApplication.class, args);
     }
 
-     @Bean
+    @Bean
     public CommandLineRunner initData(UserService userService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         return args -> {
             // 初始化默认用户

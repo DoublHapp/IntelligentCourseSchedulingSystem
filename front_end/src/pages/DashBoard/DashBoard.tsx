@@ -41,6 +41,21 @@ const Dashboard = () => {
     const navigateToManualScheduling = () => {
         navigate('/manual-scheduling');
     };
+    //处理自动排课
+    const generateSchedule = () => {
+        // TODO:待测试
+        fetch('http://localhost:8080/api/assignments/generate', {
+            method: 'GET',
+        }).then((response) => {
+            if (!response.ok) {
+                alert('课表生成失败！：'+response.statusText);
+            }
+            else alert('课表生成成功！');
+            console.log(response);
+            const data= response.json();
+            console.log(data);
+        })
+    }
     // 处理跳转到排课结果页面
     const navigateToScheduleResult = () => {
         navigate('/schedule-result');
@@ -128,7 +143,9 @@ const Dashboard = () => {
                                 <h3>手动排课</h3>
                                 <p>手动安排课程时间与教室</p>
                             </div>
-                            <div className="menu-item">
+                            <div
+                                className="menu-item"
+                                onClick={generateSchedule}>
                                 <h3>自动排课</h3>
                                 <p>使用算法自动生成课表</p>
                             </div>

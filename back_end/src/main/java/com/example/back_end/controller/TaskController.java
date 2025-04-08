@@ -208,7 +208,7 @@ public class TaskController {
         dto.setCampusOfCourseOffering(task.getCampusOfCourseOffering());
         dto.setIsExternalHire(task.getIsExternalHire());
         dto.setCourseOfferingDepartment(task.getCourseOfferingDepartment());
-        dto.setCourseWeeklyHours(task.getCourseWeeklyHours());
+        dto.setCourseWeeklyScheduleHours(task.getCourseWeeklyScheduleHours());
         dto.setConsecutiveClassSlots(task.getConsecutiveClassSlots());
         dto.setDesignatedClassroomType(task.getDesignatedClassroomType());
         dto.setDesignatedClassroom(task.getDesignatedClassroom());

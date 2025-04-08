@@ -19,6 +19,9 @@ public class Classroom {
     @Column(name = "classroom_id")
     private String classroomId;
     
+    @Column(name = "classroom_name")
+    private String classroomName;
+
     private String campus;
     
     @Column(name = "teaching_building")
