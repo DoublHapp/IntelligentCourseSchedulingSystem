@@ -7,6 +7,8 @@ import com.example.back_end.service.CourseService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.back_end.repository.CourseRepository;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,9 +18,11 @@ import java.util.stream.Collectors;
 public class CourseController {
     
     private final CourseService courseService;
+    private final CourseRepository courseRepository;
     
-    public CourseController(CourseService courseService) {
+    public CourseController(CourseService courseService, CourseRepository courseRepository) {
         this.courseService = courseService;
+        this.courseRepository = courseRepository;
     }
     
     @GetMapping
@@ -123,21 +127,31 @@ public class CourseController {
     
     private CourseDTO convertToDTO(Course course) {
         CourseDTO dto = new CourseDTO();
-        dto.setId(course.getCourseId());
-        dto.setName(course.getCourseName());
-        dto.setEnglishName(course.getCourseEnglishName());
-        dto.setCategory(course.getCourseCategory());
-        dto.setAttribute(course.getCourseAttribute());
-        dto.setType(course.getCourseType());
-        dto.setNature(course.getCourseNature());
-        dto.setDepartmentName(course.getCourseOfferingDepartment());
-        dto.setIsEnabled(course.getIsEnabled());
-        dto.setTotalHours(course.getTotalHours());
-        dto.setTheoreticalHours(course.getTheoreticalHours());
-        dto.setExperimentalHours(course.getExperimentalHours());
-        dto.setPracticalHours(course.getPracticalHours());
-        dto.setCredits(course.getCredits());
-        dto.setWeeklyHours(course.getWeeklyHours());
+    dto.setCourseId(course.getCourseId());
+    dto.setCourseName(course.getCourseName());
+    dto.setCourseEnglishName(course.getCourseEnglishName());
+    dto.setCourseCategory(course.getCourseCategory());
+    dto.setCourseAttribute(course.getCourseAttribute());
+    dto.setCourseType(course.getCourseType());
+    dto.setCourseNature(course.getCourseNature());
+    dto.setCourseOfferingDepartment(course.getCourseOfferingDepartment());
+    dto.setIsEnabled(course.getIsEnabled());
+    dto.setTotalHours(course.getTotalHours());
+    dto.setTheoreticalHours(course.getTheoreticalHours());
+    dto.setExperimentalHours(course.getExperimentalHours());
+    dto.setPracticalHours(course.getPracticalHours());
+    dto.setLabHours(course.getLabHours());
+    dto.setCredits(course.getCredits());
+    dto.setWeeklyHours(course.getWeeklyHours());
+    dto.setIsPurePracticalSession(course.getIsPurePracticalSession());
+    
+    // 这里需要查询先修课程信息，可能需要额外的代码来处理
+    // 假设前端只需要先修课程ID列表
+    List<Course> prerequisites = courseRepository.findPrerequisitesForCourse(course.getCourseId());
+    List<String> prerequisiteIds = prerequisites.stream()
+            .map(Course::getCourseId)
+            .collect(Collectors.toList());
+    dto.setPrerequisites(prerequisiteIds);
         return dto;
     }
 }

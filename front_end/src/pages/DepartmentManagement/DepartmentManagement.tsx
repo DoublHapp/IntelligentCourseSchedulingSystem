@@ -2,15 +2,28 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './DepartmentManagement.scss';
 
-// 部门类型定义
+// 部门类型定义，根据后端 Department 实体类调整
 interface Department {
-  id: number;
-  name: string;
-  code: string;
-  description?: string;
-  parentId?: number;
-  parentName?: string;
-  level?: number;
+  id: number; // 用于前端显示，实际对应后端的 departmentCode
+  name: string; // 对应后端的 departmentName
+  code: string; // 对应后端的 departmentAbbreviation
+  description?: string; // 对应后端的 remarks
+  parentId?: string; // 对应后端的 parentDepartment
+  parentName?: string; // 用于前端显示父部门名称
+  level?: number; // 计算得到的级别
+  designatedTeachingBuilding?: string;
+  isCourseOfferingDepartment?: string;
+  isCourseAttendingDepartment?: string;
+  isEnabled?: string;
+  isCourseResearchOffice?: string;
+}
+
+// API响应类型定义
+interface ApiResponse<T> {
+  code: number;
+  message: string;
+  success: boolean;
+  data: T;
 }
 
 const DepartmentManagement = () => {
@@ -23,13 +36,18 @@ const DepartmentManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  
-  // 表单状态
+
+  // 表单状态，扩展以匹配后端字段
   const [formData, setFormData] = useState<Partial<Department>>({
     name: '',
     code: '',
     description: '',
-    parentId: undefined
+    parentId: undefined,
+    designatedTeachingBuilding: '',
+    isCourseOfferingDepartment: 'N',
+    isCourseAttendingDepartment: 'N',
+    isEnabled: 'Y',
+    isCourseResearchOffice: 'N'
   });
 
   // 验证用户登录状态
@@ -43,13 +61,13 @@ const DepartmentManagement = () => {
     try {
       const userData = JSON.parse(userStr);
       setUser(userData);
-      
+
       // 只有管理员可以访问部门管理页面
       if (userData.userIdentity !== 'administrator') {
         navigate('/dashboard');
         return;
       }
-      
+
       // 加载数据
       fetchData();
     } catch (error) {
@@ -59,103 +77,62 @@ const DepartmentManagement = () => {
     }
   }, [navigate]);
 
-  // 获取部门数据
+  // 获取部门数据 - 从后端API
   const fetchData = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // 在实际项目中，这里应该调用API获取数据
-      // 例如: const response = await fetch('http://localhost:8080/api/departments');
-      // const data = await response.json();
-      
-      // 这里使用模拟数据，基于示例数据文件夹中的内容构建
-      const mockDepartments: Department[] = [
-        { 
-          id: 1, 
-          name: '计算机科学与技术学院', 
-          code: 'CS',
-          description: '计算机科学、软件工程、网络工程等专业',
-          level: 1
-        },
-        { 
-          id: 2, 
-          name: '软件工程系', 
-          code: 'SE',
-          description: '软件开发与工程管理',
-          parentId: 1,
-          parentName: '计算机科学与技术学院',
-          level: 2
-        },
-        { 
-          id: 3, 
-          name: '网络工程系', 
-          code: 'NE',
-          description: '网络技术与安全',
-          parentId: 1,
-          parentName: '计算机科学与技术学院',
-          level: 2
-        },
-        { 
-          id: 4, 
-          name: '数学学院', 
-          code: 'MATH',
-          description: '数学、统计学专业',
-          level: 1
-        },
-        { 
-          id: 5, 
-          name: '应用数学系', 
-          code: 'AM',
-          description: '应用数学研究',
-          parentId: 4,
-          parentName: '数学学院',
-          level: 2
-        },
-        { 
-          id: 6, 
-          name: '统计学系', 
-          code: 'STAT',
-          description: '统计学与数据分析',
-          parentId: 4,
-          parentName: '数学学院',
-          level: 2
-        },
-        { 
-          id: 7, 
-          name: '物理学院', 
-          code: 'PHY',
-          description: '物理学研究与教学',
-          level: 1
-        },
-        { 
-          id: 8, 
-          name: '外国语学院', 
-          code: 'FL',
-          description: '外语教学与研究',
-          level: 1
-        },
-        { 
-          id: 9, 
-          name: '英语系', 
-          code: 'ENG',
-          description: '英语语言文学',
-          parentId: 8,
-          parentName: '外国语学院',
-          level: 2
-        }
-      ];
+      const response = await fetch('http://localhost:8080/api/departments');
 
-      setDepartments(mockDepartments);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const result: ApiResponse<any[]> = await response.json();
+
+      if (result.success && result.data) {
+        // 转换后端数据格式为前端格式
+        const transformedDepartments: Department[] = result.data.map(dept => ({
+          id: dept.departmentCode, // 将后端的 departmentCode 映射到前端的 id
+          name: dept.departmentName,
+          code: dept.departmentAbbreviation,
+          description: dept.remarks,
+          parentId: dept.parentDepartment,
+          parentName: '', // 后续会填充此字段
+          level: dept.parentDepartment ? 2 : 1, // 如果有父部门则为二级部门，否则为一级部门
+          designatedTeachingBuilding: dept.designatedTeachingBuilding,
+          isCourseOfferingDepartment: dept.isCourseOfferingDepartment,
+          isCourseAttendingDepartment: dept.isCourseAttendingDepartment,
+          isEnabled: dept.isEnabled,
+          isCourseResearchOffice: dept.isCourseResearchOffice
+        }));
+
+        // 填充父部门名称
+        transformedDepartments.forEach(dept => {
+          if (dept.parentId) {
+            const parentDept = transformedDepartments.find(d => d.id.toString() === dept.parentId);
+            if (parentDept) {
+              dept.parentName = parentDept.name;
+            }
+          }
+        });
+
+        setDepartments(transformedDepartments);
+      } else {
+        setError(result.message || '获取部门数据失败');
+      }
+
       setLoading(false);
     } catch (error) {
       console.error('加载部门数据失败:', error);
-      setError('加载部门数据失败，请重试');
+      setError('加载部门数据失败，请确保后端服务已启动');
       setLoading(false);
     }
   };
 
   // 根据搜索条件筛选部门
-  const filteredDepartments = departments.filter(dept => 
-    dept.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredDepartments = departments.filter(dept =>
+    dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     dept.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -164,7 +141,7 @@ const DepartmentManagement = () => {
 
   // 获取某个部门的子部门
   const getChildDepartments = (parentId: number) => {
-    return departments.filter(dept => dept.parentId === parentId);
+    return departments.filter(dept => dept.parentId === parentId.toString());
   };
 
   // 处理表单输入变化
@@ -176,15 +153,63 @@ const DepartmentManagement = () => {
     });
   };
 
-  // 选择部门进行编辑
-  const handleEditDepartment = (department: Department) => {
+  // 选择部门进行编辑 - 从后端获取详细信息
+  const handleEditDepartment = async (department: Department) => {
     setSelectedDepartment(department);
-    setFormData({
-      name: department.name,
-      code: department.code,
-      description: department.description,
-      parentId: department.parentId
-    });
+    setError(null);
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/departments/${department.id}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const result: ApiResponse<any> = await response.json();
+
+      if (result.success && result.data) {
+        const deptData = result.data;
+        setFormData({
+          name: deptData.departmentName,
+          code: deptData.departmentAbbreviation,
+          description: deptData.remarks,
+          parentId: deptData.parentDepartment,
+          designatedTeachingBuilding: deptData.designatedTeachingBuilding || '',
+          isCourseOfferingDepartment: deptData.isCourseOfferingDepartment || 'N',
+          isCourseAttendingDepartment: deptData.isCourseAttendingDepartment || 'N',
+          isEnabled: deptData.isEnabled || 'Y',
+          isCourseResearchOffice: deptData.isCourseResearchOffice || 'N'
+        });
+      } else {
+        // 回退到基本数据
+        setFormData({
+          name: department.name,
+          code: department.code,
+          description: department.description,
+          parentId: department.parentId,
+          designatedTeachingBuilding: department.designatedTeachingBuilding || '',
+          isCourseOfferingDepartment: department.isCourseOfferingDepartment || 'N',
+          isCourseAttendingDepartment: department.isCourseAttendingDepartment || 'N',
+          isEnabled: department.isEnabled || 'Y',
+          isCourseResearchOffice: department.isCourseResearchOffice || 'N'
+        });
+      }
+    } catch (error) {
+      console.error('获取部门详细信息失败:', error);
+      // 回退到基本数据
+      setFormData({
+        name: department.name,
+        code: department.code,
+        description: department.description,
+        parentId: department.parentId,
+        designatedTeachingBuilding: department.designatedTeachingBuilding || '',
+        isCourseOfferingDepartment: department.isCourseOfferingDepartment || 'N',
+        isCourseAttendingDepartment: department.isCourseAttendingDepartment || 'N',
+        isEnabled: department.isEnabled || 'Y',
+        isCourseResearchOffice: department.isCourseResearchOffice || 'N'
+      });
+    }
+
     setIsEditMode(true);
     setIsAddMode(false);
   };
@@ -196,10 +221,16 @@ const DepartmentManagement = () => {
       name: '',
       code: '',
       description: '',
-      parentId: parentId
+      parentId: parentId ? String(parentId) : undefined,
+      designatedTeachingBuilding: '',
+      isCourseOfferingDepartment: 'N',
+      isCourseAttendingDepartment: 'N',
+      isEnabled: 'Y',
+      isCourseResearchOffice: 'N'
     });
     setIsAddMode(true);
     setIsEditMode(false);
+    setError(null);
   };
 
   // 取消编辑或添加
@@ -211,108 +242,191 @@ const DepartmentManagement = () => {
       name: '',
       code: '',
       description: '',
-      parentId: undefined
+      parentId: undefined,
+      designatedTeachingBuilding: '',
+      isCourseOfferingDepartment: 'N',
+      isCourseAttendingDepartment: 'N',
+      isEnabled: 'Y',
+      isCourseResearchOffice: 'N'
     });
+    setError(null);
   };
 
-  // 保存部门信息
-  const handleSaveDepartment = () => {
+  // 保存部门信息 - 与后端API对接
+  const handleSaveDepartment = async () => {
     if (!formData.name || !formData.code) {
       setError('部门名称和代码不能为空');
       return;
     }
 
-    // 检查代码是否重复（除了当前编辑的部门）
-    const isDuplicateCode = departments.some(dept => 
-      dept.code === formData.code && 
-      (isAddMode || (isEditMode && selectedDepartment && dept.id !== selectedDepartment.id))
-    );
-
-    if (isDuplicateCode) {
-      setError('部门代码已存在，请使用不同的代码');
-      return;
-    }
-
-    if (isAddMode) {
-      // 添加新部门
-      const parentDept = formData.parentId ? departments.find(d => d.id === formData.parentId) : undefined;
-      
-      const newDepartment: Department = {
-        id: Math.max(...departments.map(d => d.id), 0) + 1,
-        name: formData.name || '',
-        code: formData.code || '',
-        description: formData.description,
-        parentId: formData.parentId,
-        parentName: parentDept?.name,
-        level: parentDept ? 2 : 1
+    try {
+      // 准备发送到后端的数据
+      const departmentData = {
+        departmentCode: isEditMode && selectedDepartment ? selectedDepartment.id : undefined,
+        departmentName: formData.name,
+        departmentAbbreviation: formData.code,
+        remarks: formData.description,
+        parentDepartment: formData.parentId || null,
+        designatedTeachingBuilding: formData.designatedTeachingBuilding,
+        isCourseOfferingDepartment: formData.isCourseOfferingDepartment,
+        isCourseAttendingDepartment: formData.isCourseAttendingDepartment,
+        isEnabled: formData.isEnabled,
+        isCourseResearchOffice: formData.isCourseResearchOffice
       };
-      
-      setDepartments([...departments, newDepartment]);
-      setError(null);
-      setIsAddMode(false);
-      setFormData({
-        name: '',
-        code: '',
-        description: '',
-        parentId: undefined
+
+      const url = isEditMode && selectedDepartment
+        ? `http://localhost:8080/api/departments/${selectedDepartment.id}`
+        : 'http://localhost:8080/api/departments';
+
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(departmentData)
       });
-    } else if (isEditMode && selectedDepartment) {
-      // 更新现有部门
-      const parentDept = formData.parentId ? departments.find(d => d.id === formData.parentId) : undefined;
-      
-      const updatedDepartments = departments.map(dept => {
-        if (dept.id === selectedDepartment.id) {
-          return {
-            ...dept,
-            name: formData.name || dept.name,
-            code: formData.code || dept.code,
-            description: formData.description,
-            parentId: formData.parentId,
-            parentName: parentDept?.name,
-            level: parentDept ? 2 : 1
-          };
-        }
-        // 如果该部门是被编辑部门的子部门，也需要更新其parentName
-        if (dept.parentId === selectedDepartment.id) {
-          return {
-            ...dept,
-            parentName: formData.name || dept.parentName
-          };
-        }
-        return dept;
-      });
-      
-      setDepartments(updatedDepartments);
-      setError(null);
-      setIsEditMode(false);
-      setSelectedDepartment(null);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        // 成功保存后，重新获取最新的部门列表
+        await fetchData();
+        setError(null);
+        setIsEditMode(false);
+        setIsAddMode(false);
+        setSelectedDepartment(null);
+      } else {
+        setError(result.message || (isEditMode ? '更新部门失败' : '创建部门失败'));
+      }
+    } catch (error) {
+      console.error(isEditMode ? '更新部门失败:' : '创建部门失败:', error);
+      setError(isEditMode ? '更新部门失败，请重试' : '创建部门失败，请重试');
     }
   };
 
-  // 删除部门
-  const handleDeleteDepartment = (department: Department) => {
-    // 检查是否有子部门
-    const hasChildren = departments.some(dept => dept.parentId === department.id);
-    
-    if (hasChildren) {
-      alert(`无法删除部门 "${department.name}"，因为它有子部门。请先删除子部门。`);
-      return;
-    }
-    
-    if (window.confirm(`确定要删除部门 "${department.name}" 吗？`)) {
-      const updatedDepartments = departments.filter(d => d.id !== department.id);
-      setDepartments(updatedDepartments);
-      
-      if (selectedDepartment && selectedDepartment.id === department.id) {
-        setSelectedDepartment(null);
-        setIsEditMode(false);
+  // 删除部门 - 与后端API对接
+  const handleDeleteDepartment = async (department: Department) => {
+    try {
+      // 先检查是否有子部门
+      const childDepts = departments.filter(dept => dept.parentId === department.id.toString());
+
+      if (childDepts.length > 0) {
+        alert(`无法删除部门 "${department.name}"，因为它有子部门。请先删除子部门。`);
+        return;
       }
+
+      if (window.confirm(`确定要删除部门 "${department.name}" 吗？`)) {
+        const response = await fetch(`http://localhost:8080/api/departments/${department.id}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+          // 成功删除后，重新获取最新的部门列表
+          await fetchData();
+
+          if (selectedDepartment && selectedDepartment.id === department.id) {
+            setSelectedDepartment(null);
+            setIsEditMode(false);
+          }
+        } else {
+          alert(result.message || '删除部门失败');
+        }
+      }
+    } catch (error) {
+      console.error('删除部门失败:', error);
+      alert('删除部门失败，请重试');
     }
   };
 
   // 返回仪表盘
   const handleBackToDashboard = () => {
     navigate('/dashboard');
+  };
+
+  // 执行搜索
+  const handleSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!searchTerm.trim()) {
+      await fetchData();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(`http://localhost:8080/api/departments/search?keyword=${encodeURIComponent(searchTerm)}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const result: ApiResponse<any[]> = await response.json();
+
+      if (result.success && result.data) {
+        // 转换后端数据格式为前端格式
+        const transformedDepartments = result.data.map(dept => ({
+          id: dept.departmentCode,
+          name: dept.departmentName,
+          code: dept.departmentAbbreviation,
+          description: dept.remarks,
+          parentId: dept.parentDepartment,
+          parentName: '', // 后续会填充此字段
+          level: dept.parentDepartment ? 2 : 1,
+          designatedTeachingBuilding: dept.designatedTeachingBuilding,
+          isCourseOfferingDepartment: dept.isCourseOfferingDepartment,
+          isCourseAttendingDepartment: dept.isCourseAttendingDepartment,
+          isEnabled: dept.isEnabled,
+          isCourseResearchOffice: dept.isCourseResearchOffice
+        }));
+
+        // 填充父部门名称
+        for (const dept of transformedDepartments) {
+          if (dept.parentId) {
+            // 尝试从搜索结果中找父部门
+            let parentDept = transformedDepartments.find(d => d.id.toString() === dept.parentId);
+
+            // 如果在搜索结果中找不到，则需要单独请求
+            if (!parentDept) {
+              try {
+                const parentResponse = await fetch(`http://localhost:8080/api/departments/${dept.parentId}`);
+                if (parentResponse.ok) {
+                  const parentResult: ApiResponse<any> = await parentResponse.json();
+                  if (parentResult.success && parentResult.data) {
+                    dept.parentName = parentResult.data.departmentName;
+                  }
+                }
+              } catch (error) {
+                console.error('获取父部门详情失败:', error);
+              }
+            } else {
+              dept.parentName = parentDept.name;
+            }
+          }
+        }
+
+        setDepartments(transformedDepartments);
+      } else {
+        setError(result.message || '搜索部门失败');
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('搜索部门失败:', error);
+      setError('搜索部门失败，请重试');
+      setLoading(false);
+    }
   };
 
   return (
@@ -333,24 +447,25 @@ const DepartmentManagement = () => {
           <>
             <div className="management-container">
               <div className="department-tools">
-                <div className="search-bar">
-                  <input 
-                    type="text" 
-                    placeholder="搜索部门名称或代码..." 
+                <form className="search-bar" onSubmit={handleSearchSubmit}>
+                  <input
+                    type="text"
+                    placeholder="搜索部门名称或代码..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
-                </div>
-                
+                  <button type="submit">搜索</button>
+                </form>
+
                 <button className="add-department-button" onClick={() => handleAddDepartment()}>
                   添加顶级部门
                 </button>
               </div>
-              
+
               {searchTerm ? (
                 <div className="search-results">
                   <h2>搜索结果</h2>
-                  
+
                   {filteredDepartments.length === 0 ? (
                     <div className="no-departments">未找到相关部门</div>
                   ) : (
@@ -372,13 +487,13 @@ const DepartmentManagement = () => {
                             <td>{department.parentName || '-'}</td>
                             <td>{department.description || '-'}</td>
                             <td className="actions-cell">
-                              <button 
+                              <button
                                 className="edit-button"
                                 onClick={() => handleEditDepartment(department)}
                               >
                                 编辑
                               </button>
-                              <button 
+                              <button
                                 className="delete-button"
                                 onClick={() => handleDeleteDepartment(department)}
                               >
@@ -394,7 +509,7 @@ const DepartmentManagement = () => {
               ) : (
                 <div className="departments-tree">
                   <h2>部门结构</h2>
-                  
+
                   {topLevelDepartments.length === 0 ? (
                     <div className="no-departments">暂无部门信息</div>
                   ) : (
@@ -409,11 +524,11 @@ const DepartmentManagement = () => {
                               <button onClick={() => handleAddDepartment(department.id)}>添加子部门</button>
                             </div>
                           </div>
-                          
+
                           {department.description && (
                             <p className="department-description">{department.description}</p>
                           )}
-                          
+
                           <div className="sub-departments">
                             {getChildDepartments(department.id).map(childDept => (
                               <div key={childDept.id} className="sub-department-item">
@@ -443,39 +558,39 @@ const DepartmentManagement = () => {
               {(isEditMode || isAddMode) && (
                 <div className="department-form">
                   <h3>{isAddMode ? '添加部门' : '编辑部门'}</h3>
-                  
+
                   {error && <div className="form-error">{error}</div>}
-                  
+
                   <div className="form-group">
                     <label htmlFor="name">部门名称 <span className="required">*</span></label>
-                    <input 
-                      type="text" 
-                      id="name" 
-                      name="name" 
-                      value={formData.name} 
-                      onChange={handleInputChange} 
-                      required 
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
                     />
                   </div>
-                  
+
                   <div className="form-group">
                     <label htmlFor="code">部门代码 <span className="required">*</span></label>
-                    <input 
-                      type="text" 
-                      id="code" 
-                      name="code" 
-                      value={formData.code} 
-                      onChange={handleInputChange} 
-                      required 
+                    <input
+                      type="text"
+                      id="code"
+                      name="code"
+                      value={formData.code}
+                      onChange={handleInputChange}
+                      required
                     />
                     <small>请使用唯一的字母代码，如"CS"、"MATH"等</small>
                   </div>
-                  
+
                   <div className="form-group">
                     <label htmlFor="parentId">上级部门</label>
-                    <select 
-                      id="parentId" 
-                      name="parentId" 
+                    <select
+                      id="parentId"
+                      name="parentId"
                       value={formData.parentId || ''}
                       onChange={handleInputChange}
                     >
@@ -490,25 +605,88 @@ const DepartmentManagement = () => {
                       }
                     </select>
                   </div>
-                  
+
                   <div className="form-group">
                     <label htmlFor="description">描述</label>
-                    <textarea 
-                      id="description" 
-                      name="description" 
-                      value={formData.description || ''} 
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={formData.description || ''}
                       onChange={handleInputChange}
                     />
                   </div>
-                  
+
+                  <div className="form-group">
+                    <label htmlFor="designatedTeachingBuilding">指定教学楼</label>
+                    <input
+                      type="text"
+                      id="designatedTeachingBuilding"
+                      name="designatedTeachingBuilding"
+                      value={formData.designatedTeachingBuilding || ''}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="isEnabled">启用状态</label>
+                    <select
+                      id="isEnabled"
+                      name="isEnabled"
+                      value={formData.isEnabled}
+                      onChange={handleInputChange}
+                    >
+                      <option value="Y">启用</option>
+                      <option value="N">禁用</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="isCourseOfferingDepartment">是否为课程开设单位</label>
+                    <select
+                      id="isCourseOfferingDepartment"
+                      name="isCourseOfferingDepartment"
+                      value={formData.isCourseOfferingDepartment}
+                      onChange={handleInputChange}
+                    >
+                      <option value="Y">是</option>
+                      <option value="N">否</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="isCourseAttendingDepartment">是否为课程学习单位</label>
+                    <select
+                      id="isCourseAttendingDepartment"
+                      name="isCourseAttendingDepartment"
+                      value={formData.isCourseAttendingDepartment}
+                      onChange={handleInputChange}
+                    >
+                      <option value="Y">是</option>
+                      <option value="N">否</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="isCourseResearchOffice">是否为课程研究室</label>
+                    <select
+                      id="isCourseResearchOffice"
+                      name="isCourseResearchOffice"
+                      value={formData.isCourseResearchOffice}
+                      onChange={handleInputChange}
+                    >
+                      <option value="Y">是</option>
+                      <option value="N">否</option>
+                    </select>
+                  </div>
+
                   <div className="form-actions">
-                    <button 
+                    <button
                       className="save-button"
                       onClick={handleSaveDepartment}
                     >
                       保存
                     </button>
-                    <button 
+                    <button
                       className="cancel-button"
                       onClick={handleCancel}
                     >

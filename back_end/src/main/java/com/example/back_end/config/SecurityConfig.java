@@ -21,7 +21,7 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
+    //TODO : 之后需要根据实际情况进行安全设置
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -29,6 +29,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
+                // 允许部门相关API访问
+                .requestMatchers("/api/departments/**").permitAll()
                 .requestMatchers("/api/assignments/generate").permitAll()
                 .anyRequest().authenticated()
             );

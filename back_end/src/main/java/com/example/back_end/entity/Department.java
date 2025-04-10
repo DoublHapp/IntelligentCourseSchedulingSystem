@@ -17,7 +17,7 @@ public class Department {
     
     @Id
     @Column(name = "department_code")// 主键是 department_code
-    private Long id;
+    private Long departmentCode;
     
     @Column(name = "department_name")
     private String departmentName;
@@ -53,7 +53,7 @@ public class Department {
     private String affiliatedUnitType;
     
     @Column(name = "parent_department")
-    private String parentDepartment;
+    private String parentDepartment;//父部门名称
     
     @Column(name = "designated_teaching_building")
     private String designatedTeachingBuilding;

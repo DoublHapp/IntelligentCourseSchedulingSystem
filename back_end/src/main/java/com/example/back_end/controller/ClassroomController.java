@@ -150,7 +150,7 @@ public class ClassroomController {
     
     private ClassroomDTO convertToDTO(Classroom classroom) {
         ClassroomDTO dto = new ClassroomDTO();
-        dto.setId(classroom.getClassroomId());
+        dto.setClassroomId(classroom.getClassroomId());
         dto.setCampus(classroom.getCampus());
         dto.setTeachingBuilding(classroom.getTeachingBuilding());
         dto.setFloor(classroom.getFloor());
@@ -158,7 +158,7 @@ public class ClassroomController {
         dto.setClassroomType(classroom.getClassroomType());
         dto.setExamSeatingCapacity(classroom.getExamSeatingCapacity());
         dto.setMaximumClassSeatingCapacity(classroom.getMaximumClassSeatingCapacity());
-        dto.setHasAirConditioning(classroom.getIsHasAirConditioning());
+        dto.setIsHasAirConditioning(classroom.getIsHasAirConditioning());
         dto.setIsEnabled(classroom.getIsEnabled());
         dto.setClassroomDescription(classroom.getClassroomDescription());
         dto.setManagementDepartment(classroom.getManagementDepartment());

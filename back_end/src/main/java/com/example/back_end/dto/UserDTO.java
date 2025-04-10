@@ -19,9 +19,7 @@ public class UserDTO {
     private String userIdentity; // 用户身份：学生、教师、管理员
     private User.Role role;
     private LocalDateTime createdAt;
-    private Boolean isActive;
-    private String email;
-    private String phone;
+
     
     // 不包含密码字段，确保安全
 }

@@ -20,8 +20,8 @@ public class DepartmentService {
         return departmentRepository.findAll();
     }
     
-    public Optional<Department> findById(Long id) {
-        return departmentRepository.findById(id);
+    public Optional<Department> findByDepartmentCode(Long DepartmentCode) {
+        return departmentRepository.findByDepartmentCode(DepartmentCode);
     }
     
     public Department save(Department department) {
@@ -32,9 +32,9 @@ public class DepartmentService {
         departmentRepository.deleteById(id);
     }
     
-    // 根据名称或代码查找部门
+    // 根据名称或缩写查找部门
     public List<Department> findByNameOrCodeContaining(String keyword) {
-        return departmentRepository.findByDepartmentNameContainingOrIdContaining(keyword);
+        return departmentRepository.findByDepartmentNameContainingOrDepartmentAbbreviationContaining(keyword);
     }
     
     // 查找顶级部门（没有父部门的）
@@ -42,8 +42,48 @@ public class DepartmentService {
         return departmentRepository.findByParentDepartmentIsNull();
     }
     
-   // 通过父部门ID查找子部门 (修改实现以使用正确的仓库方法)
-   public List<Department> findByParentId(Long parentId) {
-    return departmentRepository.findByParentDepartment(parentId.toString());
-}
+    // 通过父部门ID查找子部门
+    public List<Department> findByParentId(Long parentId) {
+        return departmentRepository.findByParentDepartment(parentId.toString());
+    }
+    
+    // 根据教学楼查找部门
+    public List<Department> findByDesignatedTeachingBuilding(String buildingId) {
+        return departmentRepository.findByDesignatedTeachingBuilding(buildingId);
+    }
+    
+    // 查找可开设课程的部门
+    public List<Department> findCourseOfferingDepartments() {
+        return departmentRepository.findByIsCourseOfferingDepartmentEquals("Y");
+    }
+    
+    // 查找可学习课程的部门
+    public List<Department> findCourseAttendingDepartments() {
+        return departmentRepository.findByIsCourseAttendingDepartmentEquals("Y");
+    }
+    
+    // 查找实体部门
+    public List<Department> findPhysicalEntityDepartments() {
+        return departmentRepository.findByIsPhysicalEntityEquals("Y");
+    }
+    
+    // 查找课程研究室部门
+    public List<Department> findCourseResearchOfficeDepartments() {
+        return departmentRepository.findByIsCourseResearchOfficeEquals("Y");
+    }
+    
+    // 根据单位类别查询部门
+    public List<Department> findByAffiliatedUnitCategory(String category) {
+        return departmentRepository.findByAffiliatedUnitCategory(category);
+    }
+    
+    // 根据单位类型查询部门
+    public List<Department> findByAffiliatedUnitType(String type) {
+        return departmentRepository.findByAffiliatedUnitType(type);
+    }
+    
+    // 根据启用状态查询部门
+    public List<Department> findByIsEnabled(String isEnabled) {
+        return departmentRepository.findByIsEnabled(isEnabled);
+    }
 }

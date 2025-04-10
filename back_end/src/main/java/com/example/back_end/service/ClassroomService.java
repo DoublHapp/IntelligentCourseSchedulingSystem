@@ -12,7 +12,6 @@ public class ClassroomService {
     
     private final ClassroomRepository classroomRepository;
     
-    
     public ClassroomService(ClassroomRepository classroomRepository) {
         this.classroomRepository = classroomRepository;
     }
@@ -25,10 +24,13 @@ public class ClassroomService {
         return classroomRepository.findById(id);
     }
     
+    public List<Classroom> findByName(String name) {
+        return classroomRepository.findByClassroomNameContaining(name);
+    }
+    
     public List<Classroom> findByTeachingBuilding(String buildingId) {
         return classroomRepository.findByTeachingBuilding(buildingId);
     }
-    
     
     public List<Classroom> findByCampus(String campus) {
         return classroomRepository.findByCampus(campus);
@@ -36,6 +38,26 @@ public class ClassroomService {
     
     public List<Classroom> findByClassroomType(String type) {
         return classroomRepository.findByClassroomType(type);
+    }
+    
+    public List<Classroom> findByFloor(String floor) {
+        return classroomRepository.findByFloor(floor);
+    }
+    
+    public List<Classroom> findByTeachingBuildingAndFloor(String teachingBuilding, String floor) {
+        return classroomRepository.findByTeachingBuildingAndFloor(teachingBuilding, floor);
+    }
+    
+    public List<Classroom> findByManagementDepartment(String department) {
+        return classroomRepository.findByManagementDepartment(department);
+    }
+    
+    public List<Classroom> findByCampusAndClassroomType(String campus, String type) {
+        return classroomRepository.findByCampusAndClassroomType(campus, type);
+    }
+    
+    public List<Classroom> findByIds(List<String> ids) {
+        return classroomRepository.findByClassroomIds(ids);
     }
     
     public Classroom save(Classroom classroom) {
@@ -46,21 +68,31 @@ public class ClassroomService {
         classroomRepository.deleteById(id);
     }
     
-    // 查找可用的教室
+    /**
+     * 查找可用的教室
+     */
     public List<Classroom> findAvailableClassrooms() {
-        return classroomRepository.findByIsEnabledEquals("是");
+        return classroomRepository.findByIsEnabledEquals("Y");
     }
     
-    // 通过容量查找教室
+    /**
+     * 通过容量查找教室(大于等于指定容量)
+     */
     public List<Classroom> findByCapacityGreaterThanEqual(Integer capacity) {
         return classroomRepository.findByMaximumClassSeatingCapacityGreaterThanEqual(capacity);
     }
+    
+    /**
+     * 查询特定容量范围内的教室
+     */
+    public List<Classroom> findByCapacityBetween(Integer minCapacity, Integer maxCapacity) {
+        return classroomRepository.findByCapacityBetween(minCapacity, maxCapacity);
+    }
 
-     /**
+    /**
      * 查询带空调的教室
      */
     public List<Classroom> findByHasAirConditioning(String hasAirConditioning) {
-        // 修改调用方法名以匹配 Repository 中的方法
         return classroomRepository.findByIsHasAirConditioningEquals(hasAirConditioning);
     }
 }

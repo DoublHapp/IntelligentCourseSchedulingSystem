@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.aspectj.internal.lang.annotation.ajcDeclareAnnotation;
+
 import org.springframework.stereotype.Component;
 
 import com.example.back_end.entity.Classroom;

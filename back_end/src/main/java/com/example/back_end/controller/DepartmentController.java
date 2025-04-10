@@ -73,10 +73,10 @@ public class DepartmentController {
         }
     }
     
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponseDTO<DepartmentDTO>> getDepartmentById(@PathVariable Long id) {
+    @GetMapping("/{departmentCode}")
+    public ResponseEntity<ApiResponseDTO<DepartmentDTO>> getDepartmentById(@PathVariable Long departmentCode) {
         try {
-            return departmentService.findById(id)
+            return departmentService.findByDepartmentCode(departmentCode)
                     .map(department -> ResponseEntity.ok(ApiResponseDTO.success("获取部门成功", convertToDTO(department))))
                     .orElse(ResponseEntity.ok(ApiResponseDTO.error("部门不存在")));
         } catch (Exception e) {
@@ -94,13 +94,13 @@ public class DepartmentController {
         }
     }
     
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponseDTO<DepartmentDTO>> updateDepartment(@PathVariable Long id, @RequestBody Department department) {
+    @PutMapping("/{departmentCode}")
+    public ResponseEntity<ApiResponseDTO<DepartmentDTO>> updateDepartment(@PathVariable Long departmentCode, @RequestBody Department department) {
         try {
-            if (!departmentService.findById(id).isPresent()) {
+            if (!departmentService.findByDepartmentCode(departmentCode).isPresent()) {
                 return ResponseEntity.ok(ApiResponseDTO.error("部门不存在"));
             }
-            department.setId(id);
+            department.setDepartmentCode(departmentCode);
             Department updatedDepartment = departmentService.save(department);
             return ResponseEntity.ok(ApiResponseDTO.success("更新部门成功", convertToDTO(updatedDepartment)));
         } catch (Exception e) {
@@ -108,20 +108,20 @@ public class DepartmentController {
         }
     }
     
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponseDTO<Void>> deleteDepartment(@PathVariable Long id) {
+    @DeleteMapping("/{departmentCode}")
+    public ResponseEntity<ApiResponseDTO<Void>> deleteDepartment(@PathVariable Long departmentCode) {
         try {
-            if (!departmentService.findById(id).isPresent()) {
+            if (!departmentService.findByDepartmentCode(departmentCode).isPresent()) {
                 return ResponseEntity.ok(ApiResponseDTO.error("部门不存在"));
             }
             
             // 检查是否有子部门
-            List<Department> childDepartments = departmentService.findByParentId(id);
+            List<Department> childDepartments = departmentService.findByParentId(departmentCode);
             if (!childDepartments.isEmpty()) {
                 return ResponseEntity.ok(ApiResponseDTO.error("该部门下有子部门，无法删除"));
             }
             
-            departmentService.deleteById(id);
+            departmentService.deleteById(departmentCode);
             return ResponseEntity.ok(ApiResponseDTO.success("删除部门成功", null));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponseDTO.error("删除部门失败: " + e.getMessage()));
@@ -130,15 +130,27 @@ public class DepartmentController {
     
     private DepartmentDTO convertToDTO(Department department) {
         DepartmentDTO dto = new DepartmentDTO();
-        dto.setId(department.getId());
-        dto.setName(department.getDepartmentName());
-        dto.setCode(department.getDepartmentAbbreviation());
-        dto.setDescription(department.getRemarks());
-        dto.setParentId(department.getParentDepartment() != null ? Long.valueOf(department.getParentDepartment()) : null);
-        dto.setParentName(department.getParentDepartment());
-        dto.setIsEnabled(department.getIsEnabled());
-        dto.setIsCourseOfferingDepartment(department.getIsCourseOfferingDepartment());
-        dto.setDesignatedTeachingBuilding(department.getDesignatedTeachingBuilding());
-        return dto;
+    dto.setDepartmentCode(department.getDepartmentCode());
+    dto.setDepartmentName(department.getDepartmentName());
+    dto.setDepartmentEnglishName(department.getDepartmentEnglishName());
+    dto.setDepartmentAbbreviation(department.getDepartmentAbbreviation());
+    dto.setDepartmentAddress(department.getDepartmentAddress());
+    dto.setIsPhysicalEntity(department.getIsPhysicalEntity());
+    dto.setAdministrativeHead(department.getAdministrativeHead());
+    dto.setPartyCommitteeHead(department.getPartyCommitteeHead());
+    dto.setEstablishmentDate(department.getEstablishmentDate());
+    dto.setExpirationDate(department.getExpirationDate());
+    dto.setAffiliatedUnitCategory(department.getAffiliatedUnitCategory());
+    dto.setAffiliatedUnitType(department.getAffiliatedUnitType());
+    dto.setParentDepartment(department.getParentDepartment());
+    dto.setDesignatedTeachingBuilding(department.getDesignatedTeachingBuilding());
+    dto.setIsCourseOfferingDepartment(department.getIsCourseOfferingDepartment());
+    dto.setIsCourseAttendingDepartment(department.getIsCourseAttendingDepartment());
+    dto.setFixedPhone(department.getFixedPhone());
+    dto.setRemarks(department.getRemarks());
+    dto.setIsEnabled(department.getIsEnabled());
+    dto.setIsCourseResearchOffice(department.getIsCourseResearchOffice());
+
+    return dto;
     }
 }

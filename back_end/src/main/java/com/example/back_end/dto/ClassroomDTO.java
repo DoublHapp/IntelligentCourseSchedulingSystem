@@ -10,19 +10,20 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClassroomDTO {
-    private String id;
-    private String campus;
-    private String teachingBuilding;
-    private String floor;
-    private String classroomLabel;
-    private String classroomType;
-    private String examSeatingCapacity;
-    private Integer maximumClassSeatingCapacity;
-    private String hasAirConditioning;
-    private String isEnabled;
-    private String classroomDescription;
-    private String managementDepartment;
-    private String weeklyScheduleHours;
-    private String classroomArea;
-    private String deskChairType;
+    private String classroomId;                  // 对应 Classroom.classroomId
+    private String classroomName;                // 对应 Classroom.classroomName
+    private String campus;              // 直接对应
+    private String teachingBuilding;    // 直接对应
+    private String floor;               // 直接对应
+    private String classroomLabel;      // 直接对应
+    private String classroomType;       // 直接对应
+    private String examSeatingCapacity; // 直接对应
+    private Integer maximumClassSeatingCapacity; // 直接对应
+    private String isHasAirConditioning;  // 对应 Classroom.isHasAirConditioning
+    private String isEnabled;           // 直接对应
+    private String classroomDescription; // 直接对应
+    private String managementDepartment; // 直接对应
+    private String weeklyScheduleHours;  // 直接对应
+    private String classroomArea;        // 直接对应
+    private String deskChairType;        // 直接对应
 }

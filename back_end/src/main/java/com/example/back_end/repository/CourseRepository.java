@@ -3,6 +3,7 @@ package com.example.back_end.repository;
 import com.example.back_end.entity.Course;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,17 +16,25 @@ public interface CourseRepository extends JpaRepository<Course, String> {
      */
     List<Course> findByCourseNameContaining(String name);
     
-   /**
+    /**
      * 根据课程代码模糊查询
      */
-    List<Course> findByCourseIdContaining(String code); // code对应courseId
+    List<Course> findByCourseIdContaining(String code);
     
     /**
      * 根据课程名称或代码模糊查询
      */
     List<Course> findByCourseNameContainingOrCourseIdContaining(String name, String code);
     
-
+    /**
+     * 根据课程类别查询课程
+     */
+    List<Course> findByCourseCategory(String category);
+    
+    /**
+     * 根据课程属性查询课程
+     */
+    List<Course> findByCourseAttribute(String attribute);
     
     /**
      * 根据课程类型查询课程
@@ -46,7 +55,13 @@ public interface CourseRepository extends JpaRepository<Course, String> {
      * 查询指定课程的先修课程
      */
     @Query(value = "SELECT c.* FROM courses c JOIN course_prerequisites cp ON c.course_id = cp.prerequisite_id WHERE cp.course_id = :courseId", nativeQuery = true)
-    List<Course> findPrerequisitesForCourse(String courseId);
+    List<Course> findPrerequisitesForCourse(@Param("courseId") String courseId);
+    
+    /**
+     * 查询以当前课程为先修课程的课程
+     */
+    @Query(value = "SELECT c.* FROM courses c JOIN course_prerequisites cp ON c.course_id = cp.course_id WHERE cp.prerequisite_id = :courseId", nativeQuery = true)
+    List<Course> findCoursesWithPrerequisite(@Param("courseId") String courseId);
     
     /**
      * 查询某学院开设的所有课程
@@ -57,4 +72,19 @@ public interface CourseRepository extends JpaRepository<Course, String> {
      * 查询是否为纯实践课程
      */
     List<Course> findByIsPurePracticalSession(String isPurePracticalSession);
+    
+    /**
+     * 根据课时范围查询课程
+     */
+    List<Course> findByTotalHoursBetween(Integer minHours, Integer maxHours);
+    
+    /**
+     * 根据每周学时查询课程
+     */
+    List<Course> findByWeeklyHours(Integer weeklyHours);
+    
+    /**
+     * 根据启用状态查询课程
+     */
+    List<Course> findByIsEnabled(String isEnabled);
 }

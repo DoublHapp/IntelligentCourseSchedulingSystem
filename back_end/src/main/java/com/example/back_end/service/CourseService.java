@@ -12,7 +12,6 @@ public class CourseService {
     
     private final CourseRepository courseRepository;
     
-    
     public CourseService(CourseRepository courseRepository) {
         this.courseRepository = courseRepository;
     }
@@ -24,9 +23,10 @@ public class CourseService {
     public Optional<Course> findById(String id) {
         return courseRepository.findById(id);
     }
-    public List<Course> findByCourseOfferingDepartment(String department){
+    
+    public List<Course> findByCourseOfferingDepartment(String department) {
         return courseRepository.findByCourseOfferingDepartment(department);
-    };
+    }
     
     public List<Course> findByNameContaining(String name) {
         return courseRepository.findByCourseNameContaining(name);
@@ -34,6 +34,42 @@ public class CourseService {
     
     public List<Course> findByNameOrCodeContaining(String keyword) {
         return courseRepository.findByCourseNameContainingOrCourseIdContaining(keyword, keyword);
+    }
+    
+    public List<Course> findByCourseCategory(String category) {
+        return courseRepository.findByCourseCategory(category);
+    }
+    
+    public List<Course> findByCourseAttribute(String attribute) {
+        return courseRepository.findByCourseAttribute(attribute);
+    }
+    
+    public List<Course> findByCourseType(String type) {
+        return courseRepository.findByCourseType(type);
+    }
+    
+    public List<Course> findByCourseNature(String nature) {
+        return courseRepository.findByCourseNature(nature);
+    }
+    
+    public List<Course> findByCredits(Float credits) {
+        return courseRepository.findByCredits(credits);
+    }
+    
+    public List<Course> findByIsPurePracticalSession(String isPurePracticalSession) {
+        return courseRepository.findByIsPurePracticalSession(isPurePracticalSession);
+    }
+    
+    public List<Course> findByTotalHoursBetween(Integer minHours, Integer maxHours) {
+        return courseRepository.findByTotalHoursBetween(minHours, maxHours);
+    }
+    
+    public List<Course> findByWeeklyHours(Integer weeklyHours) {
+        return courseRepository.findByWeeklyHours(weeklyHours);
+    }
+    
+    public List<Course> findByIsEnabled(String isEnabled) {
+        return courseRepository.findByIsEnabled(isEnabled);
     }
     
     public Course save(Course course) {
@@ -47,5 +83,10 @@ public class CourseService {
     // 查找指定课程的先修课程
     public List<Course> findPrerequisitesForCourse(String courseId) {
         return courseRepository.findPrerequisitesForCourse(courseId);
+    }
+    
+    // 查找以当前课程为先修课程的课程
+    public List<Course> findCoursesWithPrerequisite(String courseId) {
+        return courseRepository.findCoursesWithPrerequisite(courseId);
     }
 }

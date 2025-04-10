@@ -10,7 +10,10 @@ import java.util.List;
 @Repository
 public interface ClassroomRepository extends JpaRepository<Classroom, String> {
     
-  
+    /**
+     * 根据教室名称模糊查询
+     */
+    List<Classroom> findByClassroomNameContaining(String name);
     
     /**
      * 根据校区查找教室
@@ -31,6 +34,7 @@ public interface ClassroomRepository extends JpaRepository<Classroom, String> {
      * 根据容量查找教室(>=)
      */
     List<Classroom> findByMaximumClassSeatingCapacityGreaterThanEqual(Integer capacity);
+    
     /**
      * 根据教学楼查找教室
      */
@@ -44,7 +48,7 @@ public interface ClassroomRepository extends JpaRepository<Classroom, String> {
     /**
      * 根据教室ID查询多个教室
      */
-    @Query("SELECT c FROM Classroom c WHERE c.id IN :ids")
+    @Query("SELECT c FROM Classroom c WHERE c.classroomId IN :ids")
     List<Classroom> findByClassroomIds(List<String> ids);
     
     /**
@@ -58,4 +62,18 @@ public interface ClassroomRepository extends JpaRepository<Classroom, String> {
      */
     List<Classroom> findByIsHasAirConditioningEquals(String isHasAirConditioning);
     
+    /**
+     * 根据楼层查询教室
+     */
+    List<Classroom> findByFloor(String floor);
+    
+    /**
+     * 根据管理部门查询教室
+     */
+    List<Classroom> findByManagementDepartment(String department);
+    
+    /**
+     * 根据教学楼和楼层查询教室
+     */
+    List<Classroom> findByTeachingBuildingAndFloor(String teachingBuilding, String floor);
 }
