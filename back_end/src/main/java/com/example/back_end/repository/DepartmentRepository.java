@@ -92,4 +92,11 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
      * 根据行政负责人查询部门
      */
     List<Department> findByAdministrativeHeadContaining(String head);
+
+    /**
+ * 查询最大部门代码
+ */
+  @Query("SELECT MAX(d.departmentCode) FROM Department d")
+  Long findMaxDepartmentCode();
+
 }

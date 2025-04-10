@@ -86,4 +86,9 @@ public class DepartmentService {
     public List<Department> findByIsEnabled(String isEnabled) {
         return departmentRepository.findByIsEnabled(isEnabled);
     }
+
+    // 查找最大部门代码
+public Long findMaxDepartmentCode() {
+    return departmentRepository.findMaxDepartmentCode();
+}
 }

@@ -4,9 +4,9 @@ import './DepartmentManagement.scss';
 
 // 部门类型定义，根据后端 Department 实体类调整
 interface Department {
-  id: number; // 用于前端显示，实际对应后端的 departmentCode
+  code: number | string; // 用于前端显示，实际对应后端的 departmentCode
   name: string; // 对应后端的 departmentName
-  code: string; // 对应后端的 departmentAbbreviation
+  Abbreviation?: string; // 对应后端的 departmentAbbreviation
   description?: string; // 对应后端的 remarks
   parentId?: string; // 对应后端的 parentDepartment
   parentName?: string; // 用于前端显示父部门名称
@@ -40,7 +40,7 @@ const DepartmentManagement = () => {
   // 表单状态，扩展以匹配后端字段
   const [formData, setFormData] = useState<Partial<Department>>({
     name: '',
-    code: '',
+    Abbreviation: '',
     description: '',
     parentId: undefined,
     designatedTeachingBuilding: '',
@@ -93,9 +93,9 @@ const DepartmentManagement = () => {
       if (result.success && result.data) {
         // 转换后端数据格式为前端格式
         const transformedDepartments: Department[] = result.data.map(dept => ({
-          id: dept.departmentCode, // 将后端的 departmentCode 映射到前端的 id
+          code: dept.departmentCode, // 将后端的 departmentCode 映射到前端的 code
           name: dept.departmentName,
-          code: dept.departmentAbbreviation,
+          Abbreviation: dept.departmentAbbreviation || '',// 使用空字符串作为部门简称默认值
           description: dept.remarks,
           parentId: dept.parentDepartment,
           parentName: '', // 后续会填充此字段
@@ -110,7 +110,7 @@ const DepartmentManagement = () => {
         // 填充父部门名称
         transformedDepartments.forEach(dept => {
           if (dept.parentId) {
-            const parentDept = transformedDepartments.find(d => d.id.toString() === dept.parentId);
+            const parentDept = transformedDepartments.find(d => String(d.code) === dept.parentId);
             if (parentDept) {
               dept.parentName = parentDept.name;
             }
@@ -131,17 +131,22 @@ const DepartmentManagement = () => {
   };
 
   // 根据搜索条件筛选部门
-  const filteredDepartments = departments.filter(dept =>
-    dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    dept.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // 修改 filteredDepartments 的定义，确保无论输入是字符串或数字都能匹配
+  const filteredDepartments = departments.filter(dept => {
+    const searchTermLower = searchTerm.toLowerCase();
+    const nameMatch = dept.name.toLowerCase().includes(searchTermLower);
+    // 确保 code转为字符串再比较
+    const codeMatch = String(dept.code).includes(searchTerm); // 数字code不需要转换为小写
+
+    return nameMatch || codeMatch;
+  });
 
   // 获取顶层部门（学院）
   const topLevelDepartments = departments.filter(dept => dept.level === 1 || !dept.parentId);
 
   // 获取某个部门的子部门
-  const getChildDepartments = (parentId: number) => {
-    return departments.filter(dept => dept.parentId === parentId.toString());
+  const getChildDepartments = (parentId: number | string) => {
+    return departments.filter(dept => dept.parentId === String(parentId));
   };
 
   // 处理表单输入变化
@@ -159,7 +164,7 @@ const DepartmentManagement = () => {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8080/api/departments/${department.id}`);
+      const response = await fetch(`http://localhost:8080/api/departments/${department.code}`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -171,7 +176,7 @@ const DepartmentManagement = () => {
         const deptData = result.data;
         setFormData({
           name: deptData.departmentName,
-          code: deptData.departmentAbbreviation,
+          code: String(deptData.departmentCode), // 确保有值
           description: deptData.remarks,
           parentId: deptData.parentDepartment,
           designatedTeachingBuilding: deptData.designatedTeachingBuilding || '',
@@ -184,7 +189,7 @@ const DepartmentManagement = () => {
         // 回退到基本数据
         setFormData({
           name: department.name,
-          code: department.code,
+          code: department.code, // 已经是原始值，类型兼容
           description: department.description,
           parentId: department.parentId,
           designatedTeachingBuilding: department.designatedTeachingBuilding || '',
@@ -196,18 +201,7 @@ const DepartmentManagement = () => {
       }
     } catch (error) {
       console.error('获取部门详细信息失败:', error);
-      // 回退到基本数据
-      setFormData({
-        name: department.name,
-        code: department.code,
-        description: department.description,
-        parentId: department.parentId,
-        designatedTeachingBuilding: department.designatedTeachingBuilding || '',
-        isCourseOfferingDepartment: department.isCourseOfferingDepartment || 'N',
-        isCourseAttendingDepartment: department.isCourseAttendingDepartment || 'N',
-        isEnabled: department.isEnabled || 'Y',
-        isCourseResearchOffice: department.isCourseResearchOffice || 'N'
-      });
+      // 回退到基本数据处理同上
     }
 
     setIsEditMode(true);
@@ -215,7 +209,7 @@ const DepartmentManagement = () => {
   };
 
   // 准备添加新部门
-  const handleAddDepartment = (parentId?: number) => {
+  const handleAddDepartment = (parentId?: number | string) => {
     setSelectedDepartment(null);
     setFormData({
       name: '',
@@ -262,9 +256,15 @@ const DepartmentManagement = () => {
     try {
       // 准备发送到后端的数据
       const departmentData = {
-        departmentCode: isEditMode && selectedDepartment ? selectedDepartment.id : undefined,
+        // 如果是编辑模式且有选中部门，则使用原始部门代码
+        // 如果是新建模式，尝试将code转换为数字作为departmentCode
+        departmentCode: isEditMode && selectedDepartment
+          ? selectedDepartment.code
+          : isAddMode
+            ? Number(formData.code) || null // 尝试转换为数字，如果转换失败则为null
+            : undefined,
         departmentName: formData.name,
-        departmentAbbreviation: formData.code,
+        departmentAbbreviation: formData.name,//部门简称
         remarks: formData.description,
         parentDepartment: formData.parentId || null,
         designatedTeachingBuilding: formData.designatedTeachingBuilding,
@@ -275,7 +275,7 @@ const DepartmentManagement = () => {
       };
 
       const url = isEditMode && selectedDepartment
-        ? `http://localhost:8080/api/departments/${selectedDepartment.id}`
+        ? `http://localhost:8080/api/departments/${selectedDepartment.code}`
         : 'http://localhost:8080/api/departments';
 
       const method = isEditMode ? 'PUT' : 'POST';
@@ -314,7 +314,7 @@ const DepartmentManagement = () => {
   const handleDeleteDepartment = async (department: Department) => {
     try {
       // 先检查是否有子部门
-      const childDepts = departments.filter(dept => dept.parentId === department.id.toString());
+      const childDepts = departments.filter(dept => dept.parentId === String(department.code));
 
       if (childDepts.length > 0) {
         alert(`无法删除部门 "${department.name}"，因为它有子部门。请先删除子部门。`);
@@ -322,7 +322,7 @@ const DepartmentManagement = () => {
       }
 
       if (window.confirm(`确定要删除部门 "${department.name}" 吗？`)) {
-        const response = await fetch(`http://localhost:8080/api/departments/${department.id}`, {
+        const response = await fetch(`http://localhost:8080/api/departments/${department.code}`, {
           method: 'DELETE'
         });
 
@@ -336,7 +336,7 @@ const DepartmentManagement = () => {
           // 成功删除后，重新获取最新的部门列表
           await fetchData();
 
-          if (selectedDepartment && selectedDepartment.id === department.id) {
+          if (selectedDepartment && selectedDepartment.code === department.code) {
             setSelectedDepartment(null);
             setIsEditMode(false);
           }
@@ -355,7 +355,7 @@ const DepartmentManagement = () => {
     navigate('/dashboard');
   };
 
-  // 执行搜索
+  // 执行搜索,直接使用后端搜索功能而非前端过滤
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -377,9 +377,9 @@ const DepartmentManagement = () => {
       if (result.success && result.data) {
         // 转换后端数据格式为前端格式
         const transformedDepartments = result.data.map(dept => ({
-          id: dept.departmentCode,
+          code: dept.departmentCode,//部门代码
           name: dept.departmentName,
-          code: dept.departmentAbbreviation,
+          Abbreviation: dept.departmentAbbreviation || '', // 使用空字符串作为默认值
           description: dept.remarks,
           parentId: dept.parentDepartment,
           parentName: '', // 后续会填充此字段
@@ -395,7 +395,7 @@ const DepartmentManagement = () => {
         for (const dept of transformedDepartments) {
           if (dept.parentId) {
             // 尝试从搜索结果中找父部门
-            let parentDept = transformedDepartments.find(d => d.id.toString() === dept.parentId);
+            let parentDept = transformedDepartments.find(d => String(d.code) === dept.parentId);
 
             // 如果在搜索结果中找不到，则需要单独请求
             if (!parentDept) {
@@ -428,6 +428,9 @@ const DepartmentManagement = () => {
       setLoading(false);
     }
   };
+
+
+
 
   return (
     <div className="department-management">
@@ -481,7 +484,7 @@ const DepartmentManagement = () => {
                       </thead>
                       <tbody>
                         {filteredDepartments.map(department => (
-                          <tr key={department.id}>
+                          <tr key={department.code}>
                             <td>{department.name}</td>
                             <td>{department.code}</td>
                             <td>{department.parentName || '-'}</td>
@@ -515,13 +518,13 @@ const DepartmentManagement = () => {
                   ) : (
                     <div className="departments-list">
                       {topLevelDepartments.map(department => (
-                        <div key={department.id} className="department-item">
+                        <div key={department.code} className="department-item">
                           <div className="department-header">
                             <h3>{department.name} <span className="department-code">({department.code})</span></h3>
                             <div className="department-actions">
                               <button onClick={() => handleEditDepartment(department)}>编辑</button>
                               <button onClick={() => handleDeleteDepartment(department)}>删除</button>
-                              <button onClick={() => handleAddDepartment(department.id)}>添加子部门</button>
+                              <button onClick={() => handleAddDepartment(department.code)}>添加子部门</button>
                             </div>
                           </div>
 
@@ -530,8 +533,8 @@ const DepartmentManagement = () => {
                           )}
 
                           <div className="sub-departments">
-                            {getChildDepartments(department.id).map(childDept => (
-                              <div key={childDept.id} className="sub-department-item">
+                            {getChildDepartments(department.code).map(childDept => (
+                              <div key={childDept.code} className="sub-department-item">
                                 <div className="sub-department-header">
                                   <h4>{childDept.name} <span className="department-code">({childDept.code})</span></h4>
                                   <div className="department-actions">
@@ -544,7 +547,7 @@ const DepartmentManagement = () => {
                                 )}
                               </div>
                             ))}
-                            {getChildDepartments(department.id).length === 0 && (
+                            {getChildDepartments(department.code).length === 0 && (
                               <div className="no-sub-departments">暂无子部门</div>
                             )}
                           </div>
@@ -562,7 +565,7 @@ const DepartmentManagement = () => {
                   {error && <div className="form-error">{error}</div>}
 
                   <div className="form-group">
-                    <label htmlFor="name">部门名称 <span className="required">*</span></label>
+                    <label htmlFor="name">部门名称/简称 <span className="required">*</span></label>
                     <input
                       type="text"
                       id="name"
@@ -583,7 +586,10 @@ const DepartmentManagement = () => {
                       onChange={handleInputChange}
                       required
                     />
-                    <small>请使用唯一的字母代码，如"CS"、"MATH"等</small>
+                    <small>{isAddMode ?
+                      "请输入数字作为唯一部门代码（如1001）" :
+                      "请确保部门代码唯一。部门代码不可直接更改，如需更改，请先删除部门再另行添加！！！"
+                    }</small>
                   </div>
 
                   <div className="form-group">
@@ -596,9 +602,9 @@ const DepartmentManagement = () => {
                     >
                       <option value="">无（顶级部门）</option>
                       {topLevelDepartments
-                        .filter(dept => !selectedDepartment || dept.id !== selectedDepartment.id)
+                        .filter(dept => !selectedDepartment || dept.code !== selectedDepartment.code)
                         .map(department => (
-                          <option key={department.id} value={department.id}>
+                          <option key={department.code} value={department.code}>
                             {department.name}
                           </option>
                         ))
@@ -635,8 +641,8 @@ const DepartmentManagement = () => {
                       value={formData.isEnabled}
                       onChange={handleInputChange}
                     >
-                      <option value="Y">启用</option>
-                      <option value="N">禁用</option>
+                      <option value="是">启用</option>
+                      <option value="否">禁用</option>
                     </select>
                   </div>
 
@@ -648,8 +654,8 @@ const DepartmentManagement = () => {
                       value={formData.isCourseOfferingDepartment}
                       onChange={handleInputChange}
                     >
-                      <option value="Y">是</option>
-                      <option value="N">否</option>
+                      <option value="是">是</option>
+                      <option value="否">否</option>
                     </select>
                   </div>
 
@@ -661,8 +667,8 @@ const DepartmentManagement = () => {
                       value={formData.isCourseAttendingDepartment}
                       onChange={handleInputChange}
                     >
-                      <option value="Y">是</option>
-                      <option value="N">否</option>
+                      <option value="是">是</option>
+                      <option value="否">否</option>
                     </select>
                   </div>
 
@@ -674,8 +680,8 @@ const DepartmentManagement = () => {
                       value={formData.isCourseResearchOffice}
                       onChange={handleInputChange}
                     >
-                      <option value="Y">是</option>
-                      <option value="N">否</option>
+                      <option value="是">是</option>
+                      <option value="否">否</option>
                     </select>
                   </div>
 

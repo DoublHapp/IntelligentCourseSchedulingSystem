@@ -87,6 +87,13 @@ public class DepartmentController {
     @PostMapping
     public ResponseEntity<ApiResponseDTO<DepartmentDTO>> createDepartment(@RequestBody Department department) {
         try {
+            // 检查是否已设置departmentCode
+            if (department.getDepartmentCode() == null) {
+                // 如果前端没有提供departmentCode，尝试生成一个新的
+                Long maxCode = departmentService.findMaxDepartmentCode();
+                department.setDepartmentCode(maxCode + 1); // 使用当前最大code + 1
+            }
+            
             Department savedDepartment = departmentService.save(department);
             return ResponseEntity.ok(ApiResponseDTO.success("创建部门成功", convertToDTO(savedDepartment)));
         } catch (Exception e) {
