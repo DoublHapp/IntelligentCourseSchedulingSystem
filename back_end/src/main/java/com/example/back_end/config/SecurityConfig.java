@@ -31,6 +31,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 // 允许部门相关API访问
                 .requestMatchers("/api/departments/**").permitAll()
+                //允许教师相关API访问
+                .requestMatchers("/api/teachers/**").permitAll()
                 .requestMatchers("/api/assignments/generate").permitAll()
                 .anyRequest().authenticated()
             );

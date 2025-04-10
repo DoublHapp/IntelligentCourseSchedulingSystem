@@ -8,7 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -59,18 +62,29 @@ public class TeacherController {
         }
     }
     
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponseDTO<List<TeacherDTO>>> searchTeachers(@RequestParam String keyword) {
-        try {
-            List<Teacher> teachers = teacherService.findByName(keyword);
-            List<TeacherDTO> teacherDTOs = teachers.stream()
-                    .map(this::convertToDTO)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(ApiResponseDTO.success("搜索教师成功", teacherDTOs));
-        } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponseDTO.error("搜索教师失败: " + e.getMessage()));
-        }
+   @GetMapping("/search")
+public ResponseEntity<ApiResponseDTO<List<TeacherDTO>>> searchTeachers(@RequestParam String keyword) {
+    try {
+        // 修改为同时搜索姓名和工号
+        List<Teacher> nameResults = teacherService.findByName(keyword);
+        List<Teacher> idResults = teacherService.findById(keyword)
+                                    .map(Arrays::asList)
+                                    .orElse(Collections.emptyList());
+        
+        // 合并两个结果集
+        Set<Teacher> combinedResults = new LinkedHashSet<>(nameResults);
+        combinedResults.addAll(idResults);
+        
+        List<TeacherDTO> teacherDTOs = combinedResults.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+                
+        return ResponseEntity.ok(ApiResponseDTO.success("搜索教师成功", teacherDTOs));
+    } catch (Exception e) {
+        e.printStackTrace(); // 记录详细错误信息
+        return ResponseEntity.ok(ApiResponseDTO.error("搜索教师失败: " + e.getMessage()));
     }
+}
     
     @PostMapping
     public ResponseEntity<ApiResponseDTO<TeacherDTO>> createTeacher(@RequestBody Teacher teacher) {
