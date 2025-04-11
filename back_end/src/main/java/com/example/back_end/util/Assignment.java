@@ -3,9 +3,6 @@ package com.example.back_end.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.example.back_end.entity.Classroom;
-import com.example.back_end.entity.Task;
-
 import lombok.Data;
 
 @Data
@@ -33,6 +30,7 @@ public class Assignment {
     }
 
     //初始化开始周、结束周、连续节次、连排节次
+    @Deprecated
     private void initialize(){
         String schedule = task.getCourseWeeklyScheduleHours(); // 格式: startWeek-endWeek:durationTime
         String[] parts = schedule.split(":");
@@ -52,6 +50,7 @@ public class Assignment {
         }
     }
 
+    //TODO:检查是否正确
     public boolean isValid() {
         // 检查安排是否有效（例如：教室容量足够、时间段无冲突等）
         // 容量检测
@@ -104,6 +103,7 @@ public class Assignment {
     }
 
     //随机更改时间段
+    @Deprecated
     public void randomChangeTimeSlots() {
         //一周中需要排几节课
         //TODO:删除该测试信息
