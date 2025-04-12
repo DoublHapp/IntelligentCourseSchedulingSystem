@@ -151,6 +151,7 @@ public class ClassroomController {
     private ClassroomDTO convertToDTO(Classroom classroom) {
         ClassroomDTO dto = new ClassroomDTO();
         dto.setClassroomId(classroom.getClassroomId());
+        dto.setClassroomName(classroom.getClassroomName());
         dto.setCampus(classroom.getCampus());
         dto.setTeachingBuilding(classroom.getTeachingBuilding());
         dto.setFloor(classroom.getFloor());

@@ -72,7 +72,7 @@ public class ClassroomService {
      * 查找可用的教室
      */
     public List<Classroom> findAvailableClassrooms() {
-        return classroomRepository.findByIsEnabledEquals("Y");
+        return classroomRepository.findByIsEnabledEquals("是");
     }
     
     /**

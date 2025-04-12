@@ -4,23 +4,38 @@ import './ClassroomManagement.scss';
 
 // 教学楼类型定义
 interface Building {
-  id: number;
+  id: string;
   name: string;
-  location: string;
-  floors: number;
+  location?: string;
+  floors?: number;
 }
 
-// 教室类型定义
+// 教室类型定义，与后端Classroom实体一致
 interface Classroom {
-  id: number;
-  name: string;
-  building: Building;
-  buildingId: number;
-  floor: number;
-  capacity: number;
-  type: string;  // 普通教室、实验室、多媒体教室等
-  facilities: string[]; // 设备设施
-  isAvailable: boolean;
+  classroomId: string;
+  classroomName: string;
+  campus: string;
+  teachingBuilding: string;
+  floor: string;
+  classroomLabel: string;
+  classroomType: string;
+  examSeatingCapacity: string;
+  maximumClassSeatingCapacity: number;
+  isHasAirConditioning: string;
+  isEnabled: string;
+  classroomDescription: string;
+  managementDepartment: string;
+  weeklyScheduleHours: string;
+  classroomArea: string;
+  deskChairType: string;
+}
+
+// API响应类型定义
+interface ApiResponse<T> {
+  code: number;
+  message: string;
+  success: boolean;
+  data: T;
 }
 
 const ClassroomManagement = () => {
@@ -28,22 +43,33 @@ const ClassroomManagement = () => {
   const [user, setUser] = useState<any>(null);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
-  const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
   const [selectedClassroom, setSelectedClassroom] = useState<Classroom | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAddMode, setIsAddMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showClassroomList, setShowClassroomList] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // 表单状态
   const [formData, setFormData] = useState<Partial<Classroom>>({
-    name: '',
-    buildingId: 0,
-    floor: 1,
-    capacity: 0,
-    type: '普通教室',
-    facilities: [],
-    isAvailable: true
+    classroomId: '',
+    classroomName: '',
+    campus: '',
+    teachingBuilding: '',
+    floor: '',
+    classroomLabel: '',
+    classroomType: '普通教室',
+    examSeatingCapacity: '',
+    maximumClassSeatingCapacity: 0,
+    isHasAirConditioning: '否',
+    isEnabled: '是',
+    classroomDescription: '',
+    managementDepartment: '',
+    weeklyScheduleHours: '',
+    classroomArea: '',
+    deskChairType: ''
   });
 
   // 验证用户登录状态
@@ -77,95 +103,161 @@ const ClassroomManagement = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // 在实际项目中，这里应该调用API获取数据
-      // 这里使用模拟数据，基于示例数据文件夹中的内容构建
+      // 获取所有教室数据
+      const response = await fetch('http://localhost:8080/api/classrooms');
+      if (!response.ok) {
+        throw new Error(`获取教室数据失败: ${response.status}`);
+      }
       
-      // 模拟教学楼数据
-      const mockBuildings: Building[] = [
-        { id: 1, name: '第一教学楼', location: '校区东部', floors: 5 },
-        { id: 2, name: '第二教学楼', location: '校区中部', floors: 6 },
-        { id: 3, name: '实验楼', location: '校区西部', floors: 4 },
-        { id: 4, name: '综合教学楼', location: '校区北部', floors: 8 }
-      ];
+      const result: ApiResponse<Classroom[]> = await response.json();
       
-      // 模拟教室数据
-      const mockClassrooms: Classroom[] = [
-        { 
-          id: 1, 
-          name: '101', 
-          building: mockBuildings[0], 
-          buildingId: 1, 
-          floor: 1, 
-          capacity: 60, 
-          type: '普通教室', 
-          facilities: ['投影仪', '黑板'], 
-          isAvailable: true 
-        },
-        { 
-          id: 2, 
-          name: '102', 
-          building: mockBuildings[0], 
-          buildingId: 1, 
-          floor: 1, 
-          capacity: 60, 
-          type: '普通教室', 
-          facilities: ['投影仪', '黑板', '空调'], 
-          isAvailable: true 
-        },
-        { 
-          id: 3, 
-          name: '201', 
-          building: mockBuildings[0], 
-          buildingId: 1, 
-          floor: 2, 
-          capacity: 120, 
-          type: '多媒体教室', 
-          facilities: ['电脑', '投影仪', '音响系统', '空调'], 
-          isAvailable: true 
-        },
-        { 
-          id: 4, 
-          name: '301', 
-          building: mockBuildings[1], 
-          buildingId: 2, 
-          floor: 3, 
-          capacity: 80, 
-          type: '普通教室', 
-          facilities: ['投影仪', '黑板'], 
-          isAvailable: true 
-        },
-        { 
-          id: 5, 
-          name: '101', 
-          building: mockBuildings[2], 
-          buildingId: 3, 
-          floor: 1, 
-          capacity: 40, 
-          type: '实验室', 
-          facilities: ['电脑', '实验设备', '空调'], 
-          isAvailable: true 
+      if (!result.success || !result.data) {
+        throw new Error(result.message || '获取教室数据失败');
+      }
+      
+      // 确保每个字段都有默认值，防止 null 导致错误
+      const processedData = result.data.map(classroom => ({
+        ...classroom,
+        classroomName: classroom.classroomName || '',
+        classroomId: classroom.classroomId || '',
+        campus: classroom.campus || '',
+        teachingBuilding: classroom.teachingBuilding || '',
+        floor: classroom.floor || '',
+        classroomLabel: classroom.classroomLabel || '',
+        classroomType: classroom.classroomType || '普通教室',
+        isEnabled: classroom.isEnabled || '否',
+        isHasAirConditioning: classroom.isHasAirConditioning || '否'
+      }));
+      
+      // 设置教室数据
+      setClassrooms(processedData);
+      
+      // 从教室数据中提取教学楼信息
+      const uniqueBuildings: Map<string, Building> = new Map();
+      
+      processedData.forEach(classroom => {
+        if (classroom.teachingBuilding && !uniqueBuildings.has(classroom.teachingBuilding)) {
+          uniqueBuildings.set(classroom.teachingBuilding, {
+            id: classroom.teachingBuilding,
+            name: classroom.teachingBuilding
+          });
         }
-      ];
-
-      setBuildings(mockBuildings);
-      setClassrooms(mockClassrooms);
+      });
       
-      if (mockBuildings.length > 0) {
-        setSelectedBuildingId(mockBuildings[0].id);
+      // 转换为数组
+      const buildingsList: Building[] = Array.from(uniqueBuildings.values());
+      
+      setBuildings(buildingsList);
+      
+      // 如果有教学楼，默认选中第一个
+      if (buildingsList.length > 0) {
+        setSelectedBuildingId(buildingsList[0].id);
       }
       
       setLoading(false);
     } catch (error) {
       console.error('加载数据失败:', error);
-      setError('加载数据失败，请重试');
+      setError(`加载数据失败: ${error instanceof Error ? error.message : '未知错误'}`);
       setLoading(false);
     }
   };
 
-  // 根据选中的教学楼筛选教室
-  const filteredClassrooms = selectedBuildingId 
-    ? classrooms.filter(classroom => classroom.buildingId === selectedBuildingId)
-    : classrooms;
+// 修复 filteredClassrooms 函数，添加空值检查
+const filteredClassrooms = classrooms.filter(classroom => {
+  const matchesBuildingId = selectedBuildingId ? classroom.teachingBuilding === selectedBuildingId : true;
+  const term = searchTerm.trim().toLowerCase();
+  
+  // 添加空值检查，避免调用 toLowerCase() 时出错
+  const matchesSearch = term
+    ? (classroom.classroomName?.toLowerCase() || '').includes(term) ||
+      (classroom.classroomId?.toLowerCase() || '').includes(term) ||
+      (classroom.teachingBuilding?.toLowerCase() || '').includes(term) ||
+      (classroom.campus?.toLowerCase() || '').includes(term)
+    : true;
+
+  return matchesBuildingId && matchesSearch;
+});
+
+
+
+    // 处理搜索提交
+// 同样需要修复 handleSearchSubmit 函数中的类似问题
+const handleSearchSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!searchTerm.trim()) {
+    // 清空搜索条件时重新获取所有数据
+    setSearchTerm('');
+    await fetchData();
+    return;
+  }
+
+  // 先使用前端过滤
+  const term = searchTerm.trim().toLowerCase();
+  
+  // 添加空值检查
+  const localFilteredClassrooms = classrooms.filter(classroom =>
+    (classroom.classroomName?.toLowerCase() || '').includes(term) ||
+    (classroom.classroomId?.toLowerCase() || '').includes(term) ||
+    (classroom.teachingBuilding?.toLowerCase() || '').includes(term) ||
+    (classroom.campus?.toLowerCase() || '').includes(term)
+  );
+
+  if (localFilteredClassrooms.length > 0) {
+    // 有本地匹配结果，直接返回
+    return;
+  }
+
+  // 本地没有匹配结果，尝试通过API搜索
+  try {
+    setLoading(true);
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/classrooms/search?keyword=${encodeURIComponent(term)}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const result: ApiResponse<Classroom[]> = await response.json();
+
+      if (result.success && result.data && result.data.length > 0) {
+        // 确保返回的数据每个字段都不为空
+        const processedData = result.data.map(classroom => ({
+          ...classroom,
+          classroomName: classroom.classroomName || '',
+          classroomId: classroom.classroomId || '',
+          campus: classroom.campus || '',
+          teachingBuilding: classroom.teachingBuilding || '',
+          floor: classroom.floor || '',
+          classroomLabel: classroom.classroomLabel || '',
+          classroomType: classroom.classroomType || '普通教室',
+          isEnabled: classroom.isEnabled || '否',
+          isHasAirConditioning: classroom.isHasAirConditioning || '否'
+        }));
+        setClassrooms(processedData);
+      } else {
+        // API没有返回结果，显示"暂无教室信息"但不显示错误
+        setError(null);
+      }
+    } catch (error) {
+      console.error('API搜索失败，将显示本地过滤结果:', error);
+      // API错误时不显示错误信息，仅打印到控制台，让用户体验更流畅
+    }
+
+    setLoading(false);
+  } catch (error) {
+    console.error('搜索过程出现错误:', error);
+    setLoading(false);
+  }
+};
+
+ // 切换教室列表显示状态
+const toggleClassroomList = () => {
+  setShowClassroomList(!showClassroomList);
+};
+
+
 
   // 处理表单输入变化
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -175,7 +267,13 @@ const ClassroomManagement = () => {
       const checkboxInput = e.target as HTMLInputElement;
       setFormData({
         ...formData,
-        [name]: checkboxInput.checked
+        [name]: checkboxInput.checked ? '是' : '否'
+      });
+    } else if (name === 'maximumClassSeatingCapacity') {
+      // 确保容量是数字
+      setFormData({
+        ...formData,
+        [name]: parseInt(value) || 0
       });
     } else {
       setFormData({
@@ -185,49 +283,65 @@ const ClassroomManagement = () => {
     }
   };
 
-  // 处理设施选择
-  const handleFacilityChange = (facility: string) => {
-    const currentFacilities = formData.facilities || [];
-    const updatedFacilities = currentFacilities.includes(facility)
-      ? currentFacilities.filter(f => f !== facility)
-      : [...currentFacilities, facility];
-      
-    setFormData({
-      ...formData,
-      facilities: updatedFacilities
-    });
-  };
-
   // 选择教室进行编辑
-  const handleEditClassroom = (classroom: Classroom) => {
+  const handleEditClassroom = async (classroom: Classroom) => {
     setSelectedClassroom(classroom);
-    setFormData({
-      name: classroom.name,
-      buildingId: classroom.buildingId,
-      floor: classroom.floor,
-      capacity: classroom.capacity,
-      type: classroom.type,
-      facilities: classroom.facilities,
-      isAvailable: classroom.isAvailable
-    });
+    setError(null);
+    
+    try {
+      // 获取教室详情
+      const response = await fetch(`http://localhost:8080/api/classrooms/${classroom.classroomId}`);
+      
+      if (!response.ok) {
+        throw new Error(`获取教室详情失败: ${response.status}`);
+      }
+      
+      const result: ApiResponse<Classroom> = await response.json();
+      
+      if (result.success && result.data) {
+        setFormData({...result.data});
+      } else {
+        // 回退到基本数据
+        setFormData({...classroom});
+      }
+    } catch (error) {
+      console.error('获取教室详情失败:', error);
+      // 出错时回退到基本数据
+      setFormData({...classroom});
+    }
+    
     setIsEditMode(true);
     setIsAddMode(false);
+    // 隐藏教室列表
+  setShowClassroomList(false);
   };
 
   // 准备添加新教室
   const handleAddClassroom = () => {
     setSelectedClassroom(null);
     setFormData({
-      name: '',
-      buildingId: selectedBuildingId || 0,
-      floor: 1,
-      capacity: 0,
-      type: '普通教室',
-      facilities: [],
-      isAvailable: true
+      classroomId: '',
+      classroomName: '',
+      campus: '',
+      teachingBuilding: selectedBuildingId || '',
+      floor: '',
+      classroomLabel: '',
+      classroomType: '普通教室',
+      examSeatingCapacity: '',
+      maximumClassSeatingCapacity: 0,
+      isHasAirConditioning: '否',
+      isEnabled: '是',
+      classroomDescription: '',
+      managementDepartment: '',
+      weeklyScheduleHours: '',
+      classroomArea: '',
+      deskChairType: ''
     });
     setIsAddMode(true);
     setIsEditMode(false);
+    setError(null);
+    // 隐藏教室列表
+  setShowClassroomList(false);
   };
 
   // 取消编辑或添加
@@ -236,84 +350,130 @@ const ClassroomManagement = () => {
     setIsAddMode(false);
     setSelectedClassroom(null);
     setFormData({
-      name: '',
-      buildingId: 0,
-      floor: 1,
-      capacity: 0,
-      type: '普通教室',
-      facilities: [],
-      isAvailable: true
+      classroomId: '',
+      classroomName: '',
+      campus: '',
+      teachingBuilding: selectedBuildingId || '',
+      floor: '',
+      classroomLabel: '',
+      classroomType: '普通教室',
+      examSeatingCapacity: '',
+      maximumClassSeatingCapacity: 0,
+      isHasAirConditioning: '否',
+      isEnabled: '是',
+      classroomDescription: '',
+      managementDepartment: '',
+      weeklyScheduleHours: '',
+      classroomArea: '',
+      deskChairType: ''
     });
+    setError(null);
+      // 显示教室列表
+  setShowClassroomList(true);
   };
 
   // 保存教室信息
-  const handleSaveClassroom = () => {
-    if (!formData.name || !formData.buildingId) {
-      setError('教室名称和所属教学楼不能为空');
+  const handleSaveClassroom = async () => {
+    if (!formData.classroomId || !formData.classroomName || !formData.teachingBuilding) {
+      setError('教室ID、名称和所属教学楼不能为空');
       return;
     }
 
-    if (isAddMode) {
-      // 添加新教室
-      const newClassroom: Classroom = {
-        id: Math.max(...classrooms.map(c => c.id), 0) + 1,
-        name: formData.name || '',
-        building: buildings.find(b => b.id === formData.buildingId) || buildings[0],
-        buildingId: formData.buildingId || 0,
-        floor: formData.floor || 1,
-        capacity: formData.capacity || 0,
-        type: formData.type || '普通教室',
-        facilities: formData.facilities || [],
-        isAvailable: formData.isAvailable !== undefined ? formData.isAvailable : true
+    try {
+      const classroomData = {
+        classroomId: formData.classroomId,
+        classroomName: formData.classroomName,
+        campus: formData.campus || '',
+        teachingBuilding: formData.teachingBuilding,
+        floor: formData.floor || '',
+        classroomLabel: formData.classroomLabel || '',
+        classroomType: formData.classroomType || '普通教室',
+        examSeatingCapacity: formData.examSeatingCapacity || '',
+        maximumClassSeatingCapacity: formData.maximumClassSeatingCapacity || 0,
+        isHasAirConditioning: formData.isHasAirConditioning ,
+        isEnabled: formData.isEnabled ,
+        classroomDescription: formData.classroomDescription || '',
+        managementDepartment: formData.managementDepartment || '',
+        weeklyScheduleHours: formData.weeklyScheduleHours || '',
+        classroomArea: formData.classroomArea || '',
+        deskChairType: formData.deskChairType || ''
       };
+
+      let response;
+      let method;
+      let url;
       
-      setClassrooms([...classrooms, newClassroom]);
-      setError(null);
-      setIsAddMode(false);
-      setFormData({
-        name: '',
-        buildingId: selectedBuildingId || 0,
-        floor: 1,
-        capacity: 0,
-        type: '普通教室',
-        facilities: [],
-        isAvailable: true
-      });
-    } else if (isEditMode && selectedClassroom) {
-      // 更新现有教室
-      const updatedClassrooms = classrooms.map(classroom => {
-        if (classroom.id === selectedClassroom.id) {
-          return {
-            ...classroom,
-            name: formData.name || classroom.name,
-            buildingId: formData.buildingId || classroom.buildingId,
-            building: buildings.find(b => b.id === formData.buildingId) || classroom.building,
-            floor: formData.floor || classroom.floor,
-            capacity: formData.capacity || classroom.capacity,
-            type: formData.type || classroom.type,
-            facilities: formData.facilities || classroom.facilities,
-            isAvailable: formData.isAvailable !== undefined ? formData.isAvailable : classroom.isAvailable
-          };
-        }
-        return classroom;
+      if (isEditMode) {
+        // 更新现有教室
+        url = `http://localhost:8080/api/classrooms/${formData.classroomId}`;
+        method = 'PUT';
+      } else {
+        // 创建新教室
+        url = 'http://localhost:8080/api/classrooms';
+        method = 'POST';
+      }
+      
+      response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(classroomData)
       });
       
-      setClassrooms(updatedClassrooms);
-      setError(null);
-      setIsEditMode(false);
-      setSelectedClassroom(null);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // 保存成功，重新获取数据
+        await fetchData();
+        setError(null);
+        setIsEditMode(false);
+        setIsAddMode(false);
+        setSelectedClassroom(null);
+        // 显示教室列表
+      setShowClassroomList(true);
+      } else {
+        setError(result.message || (isEditMode ? '更新教室失败' : '创建教室失败'));
+      }
+    } catch (error) {
+      console.error(isEditMode ? '更新教室失败:' : '创建教室失败:', error);
+      setError(isEditMode ? `更新教室失败: ${error instanceof Error ? error.message : '未知错误'}` : 
+                         `创建教室失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   };
 
   // 删除教室
-  const handleDeleteClassroom = (classroom: Classroom) => {
-    if (window.confirm(`确定要删除教室 ${classroom.building.name} - ${classroom.name} 吗？`)) {
-      const updatedClassrooms = classrooms.filter(c => c.id !== classroom.id);
-      setClassrooms(updatedClassrooms);
-      
-      if (selectedClassroom && selectedClassroom.id === classroom.id) {
-        setSelectedClassroom(null);
-        setIsEditMode(false);
+  const handleDeleteClassroom = async (classroom: Classroom) => {
+    if (window.confirm(`确定要删除教室 ${classroom.teachingBuilding} - ${classroom.classroomName} 吗？`)) {
+      try {
+        const response = await fetch(`http://localhost:8080/api/classrooms/${classroom.classroomId}`, {
+          method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`删除教室失败: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // 删除成功，重新获取数据
+          await fetchData();
+          
+          if (selectedClassroom && selectedClassroom.classroomId === classroom.classroomId) {
+            setSelectedClassroom(null);
+            setIsEditMode(false);
+          }
+        } else {
+          alert(result.message || '删除教室失败');
+        }
+      } catch (error) {
+        console.error('删除教室失败:', error);
+        alert(`删除教室失败: ${error instanceof Error ? error.message : '未知错误'}`);
       }
     }
   };
@@ -323,8 +483,15 @@ const ClassroomManagement = () => {
     navigate('/dashboard');
   };
 
-  const facilityOptions = [
-    '黑板', '投影仪', '电脑', '空调', '音响系统', '实验设备', '多媒体设备'
+  // 教室类型选项
+  const classroomTypeOptions = [
+    '普通教室',
+    '多媒体教室',
+    '实验室',
+    '阶梯教室',
+    '会议室',
+    '报告厅',
+    '其他'
   ];
 
   return (
@@ -344,112 +511,172 @@ const ClassroomManagement = () => {
         ) : (
           <>
             <div className="management-container">
-              <div className="sidebar">
-                <div className="building-filter">
-                  <h3>教学楼</h3>
-                  <ul className="building-list">
-                    {buildings.map(building => (
-                      <li 
-                        key={building.id}
-                        className={selectedBuildingId === building.id ? 'active' : ''}
-                        onClick={() => setSelectedBuildingId(building.id)}
-                      >
-                        {building.name}
-                        <span className="building-info">{building.location} ({building.floors}层)</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div className="actions">
-                  <button className="add-button" onClick={handleAddClassroom}>
-                    添加新教室
-                  </button>
-                </div>
-              </div>
+            <div className="sidebar">
+  <div className="building-filter">
+    <h3>教学楼</h3>
+    <ul className="building-list">
+      {buildings.map(building => (
+        <li 
+          key={building.id}
+          className={selectedBuildingId === building.id ? 'active' : ''}
+          onClick={() => setSelectedBuildingId(building.id)}
+        >
+          {building.name}
+          {building.location && <span className="building-info">{building.location}</span>}
+          {building.floors && <span className="building-info">({building.floors}层)</span>}
+        </li>
+      ))}
+    </ul>
+  </div>
+  
+  <div className="actions">
+    <button className="add-button" onClick={handleAddClassroom}>
+      添加新教室
+    </button>
+    {(isEditMode || isAddMode) && !showClassroomList && (
+      <button
+        className="show-list-button"
+        onClick={() => setShowClassroomList(true)}
+      >
+        显示教室列表
+      </button>
+    )}
+  </div>
+</div>
 
-              <div className="main-content">
-                <div className="classrooms-list">
-                  <h2>
-                    {selectedBuildingId 
-                      ? `${buildings.find(b => b.id === selectedBuildingId)?.name} 的教室` 
-                      : '所有教室'}
-                  </h2>
-                  
-                  {filteredClassrooms.length === 0 ? (
-                    <div className="no-classrooms">暂无教室信息</div>
-                  ) : (
-                    <table className="classrooms-table">
-                      <thead>
-                        <tr>
-                          <th>教室名称</th>
-                          <th>楼层</th>
-                          <th>容量</th>
-                          <th>类型</th>
-                          <th>设施</th>
-                          <th>状态</th>
-                          <th>操作</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredClassrooms.map(classroom => (
-                          <tr key={`${classroom.buildingId}-${classroom.name}`}>
-                            <td>{classroom.name}</td>
-                            <td>{classroom.floor}层</td>
-                            <td>{classroom.capacity}人</td>
-                            <td>{classroom.type}</td>
-                            <td className="facilities-cell">
-                              {classroom.facilities.join(', ')}
-                            </td>
-                            <td className={`status ${classroom.isAvailable ? 'available' : 'unavailable'}`}>
-                              {classroom.isAvailable ? '可用' : '不可用'}
-                            </td>
-                            <td className="actions-cell">
-                              <button 
-                                className="edit-button"
-                                onClick={() => handleEditClassroom(classroom)}
-                              >
-                                编辑
-                              </button>
-                              <button 
-                                className="delete-button"
-                                onClick={() => handleDeleteClassroom(classroom)}
-                              >
-                                删除
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
+<div className="main-content">
+  {/* 只在需要显示列表时渲染 */}
+  {showClassroomList && (
+    <>
+      <div className="search-bar">
+        <form onSubmit={handleSearchSubmit}>
+          <input
+            type="text"
+            placeholder="搜索教室名称、ID、教学楼或校区..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <button type="submit">搜索</button>
+        </form>
+      </div>
 
-                {(isEditMode || isAddMode) && (
-                  <div className="classroom-form">
-                    <h3>{isAddMode ? '添加新教室' : '编辑教室'}</h3>
-                    
-                    {error && <div className="form-error">{error}</div>}
+      <div className="classrooms-list">
+        <h2>
+          {selectedBuildingId 
+            ? `${buildings.find(b => b.id === selectedBuildingId)?.name} 的教室` 
+            : '所有教室'}
+        </h2>
+        
+        {filteredClassrooms.length === 0 ? (
+          <div className="no-classrooms">暂无教室信息</div>
+        ) : (
+          <table className="classrooms-table">
+            <thead>
+              <tr>
+                <th>教室编号</th>
+                <th>教室名称</th>
+                <th>校区</th>
+                <th>楼层</th>
+                <th>容量</th>
+                <th>类型</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredClassrooms.map(classroom => (
+                <tr key={classroom.classroomId}>
+                  <td>{classroom.classroomId}</td>
+                  <td>{classroom.classroomName}</td>
+                  <td>{classroom.campus}</td>
+                  <td>{classroom.floor}</td>
+                  <td>{classroom.maximumClassSeatingCapacity}人</td>
+                  <td>{classroom.classroomType}</td>
+                  <td className={`status ${classroom.isEnabled === '是' ? 'available' : 'unavailable'}`}>
+                    {classroom.isEnabled === '是' ? '可用' : '不可用'}
+                  </td>
+                  <td className="actions-cell">
+                    <button 
+                      className="edit-button"
+                      onClick={() => handleEditClassroom(classroom)}
+                    >
+                      编辑
+                    </button>
+                    <button 
+                      className="delete-button"
+                      onClick={() => handleDeleteClassroom(classroom)}
+                    >
+                      删除
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
+  )}
+
+  {(isEditMode || isAddMode) && (
+    <div className={`classroom-form ${showClassroomList ? 'with-list' : 'no-list'}`}>
+      <div className="form-header">
+        <h3>{isAddMode ? '添加新教室' : '编辑教室'}</h3>
+        <button
+          className="toggle-list-button"
+          onClick={toggleClassroomList}
+        >
+          {showClassroomList ? '隐藏教室列表' : '显示教室列表'}
+        </button>
+      </div>
+      
+      {error && <div className="form-error">{error}</div>}
                     
                     <div className="form-row">
                       <div className="form-group">
-                        <label htmlFor="name">教室名称</label>
+                        <label htmlFor="classroomId">教室ID</label>
                         <input 
                           type="text" 
-                          id="name" 
-                          name="name" 
-                          value={formData.name} 
+                          id="classroomId" 
+                          name="classroomId" 
+                          value={formData.classroomId} 
                           onChange={handleInputChange} 
+                          disabled={isEditMode}
                           required 
                         />
                       </div>
                       
                       <div className="form-group">
-                        <label htmlFor="buildingId">所属教学楼</label>
+                        <label htmlFor="classroomName">教室名称</label>
+                        <input 
+                          type="text" 
+                          id="classroomName" 
+                          name="classroomName" 
+                          value={formData.classroomName} 
+                          onChange={handleInputChange} 
+                          required 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="campus">校区</label>
+                        <input 
+                          type="text" 
+                          id="campus" 
+                          name="campus" 
+                          value={formData.campus} 
+                          onChange={handleInputChange} 
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label htmlFor="teachingBuilding">所属教学楼</label>
                         <select 
-                          id="buildingId" 
-                          name="buildingId" 
-                          value={formData.buildingId} 
+                          id="teachingBuilding" 
+                          name="teachingBuilding" 
+                          value={formData.teachingBuilding} 
                           onChange={handleInputChange}
                           required
                         >
@@ -467,24 +694,22 @@ const ClassroomManagement = () => {
                       <div className="form-group">
                         <label htmlFor="floor">楼层</label>
                         <input 
-                          type="number" 
+                          type="text" 
                           id="floor" 
                           name="floor" 
-                          min="1" 
-                          max="20" 
                           value={formData.floor} 
                           onChange={handleInputChange} 
                         />
                       </div>
 
                       <div className="form-group">
-                        <label htmlFor="capacity">容量</label>
+                        <label htmlFor="maximumClassSeatingCapacity">容量</label>
                         <input 
                           type="number" 
-                          id="capacity" 
-                          name="capacity" 
+                          id="maximumClassSeatingCapacity" 
+                          name="maximumClassSeatingCapacity" 
                           min="0" 
-                          value={formData.capacity} 
+                          value={formData.maximumClassSeatingCapacity} 
                           onChange={handleInputChange} 
                         />
                       </div>
@@ -492,51 +717,105 @@ const ClassroomManagement = () => {
 
                     <div className="form-row">
                       <div className="form-group">
-                        <label htmlFor="type">教室类型</label>
+                        <label htmlFor="classroomType">教室类型</label>
                         <select 
-                          id="type" 
-                          name="type" 
-                          value={formData.type} 
+                          id="classroomType" 
+                          name="classroomType" 
+                          value={formData.classroomType} 
                           onChange={handleInputChange}
                         >
-                          <option value="普通教室">普通教室</option>
-                          <option value="多媒体教室">多媒体教室</option>
-                          <option value="实验室">实验室</option>
-                          <option value="阶梯教室">阶梯教室</option>
+                          {classroomTypeOptions.map(option => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
                         </select>
                       </div>
 
                       <div className="form-group">
-                        <label htmlFor="isAvailable">可用状态</label>
+                        <label htmlFor="isEnabled">可用状态</label>
                         <div className="checkbox-container">
                           <input 
                             type="checkbox" 
-                            id="isAvailable" 
-                            name="isAvailable" 
-                            checked={formData.isAvailable} 
-                            onChange={handleInputChange} 
+                            id="isEnabled" 
+                            name="isEnabled" 
+                            checked={formData.isEnabled === '是'} 
+                            onChange={(e) => setFormData({
+                              ...formData,
+                              isEnabled: e.target.checked ? '是' : '否'
+                            })} 
                           />
-                          <label htmlFor="isAvailable" className="checkbox-label">
+                          <label htmlFor="isEnabled" className="checkbox-label">
                             可用
                           </label>
                         </div>
                       </div>
                     </div>
 
-                    <div className="form-group full-width">
-                      <label>设施</label>
-                      <div className="facilities-checkboxes">
-                        {facilityOptions.map(facility => (
-                          <div key={facility} className="facility-checkbox">
-                            <input 
-                              type="checkbox" 
-                              id={`facility-${facility}`}
-                              checked={(formData.facilities || []).includes(facility)}
-                              onChange={() => handleFacilityChange(facility)}
-                            />
-                            <label htmlFor={`facility-${facility}`}>{facility}</label>
-                          </div>
-                        ))}
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="classroomArea">教室面积</label>
+                        <input 
+                          type="text" 
+                          id="classroomArea" 
+                          name="classroomArea" 
+                          value={formData.classroomArea} 
+                          onChange={handleInputChange} 
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="isHasAirConditioning">空调</label>
+                        <div className="checkbox-container">
+                          <input 
+                            type="checkbox" 
+                            id="isHasAirConditioning" 
+                            name="isHasAirConditioning" 
+                            checked={formData.isHasAirConditioning === '是'} 
+                            onChange={(e) => setFormData({
+                              ...formData,
+                              isHasAirConditioning: e.target.checked ? '是' : '否'
+                            })} 
+                          />
+                          <label htmlFor="isHasAirConditioning" className="checkbox-label">
+                            有空调
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group full-width">
+                        <label htmlFor="classroomDescription">教室描述</label>
+                        <textarea 
+                          id="classroomDescription" 
+                          name="classroomDescription" 
+                          value={formData.classroomDescription} 
+                          onChange={handleInputChange} 
+                          rows={3}
+                        ></textarea>
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="managementDepartment">管理部门</label>
+                        <input 
+                          type="text" 
+                          id="managementDepartment" 
+                          name="managementDepartment" 
+                          value={formData.managementDepartment} 
+                          onChange={handleInputChange} 
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="deskChairType">桌椅类型</label>
+                        <input 
+                          type="text" 
+                          id="deskChairType" 
+                          name="deskChairType" 
+                          value={formData.deskChairType} 
+                          onChange={handleInputChange} 
+                        />
                       </div>
                     </div>
 
