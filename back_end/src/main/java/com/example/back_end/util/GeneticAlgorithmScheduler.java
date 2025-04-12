@@ -6,14 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
-
-
 import org.springframework.stereotype.Component;
 
 import com.example.back_end.repository.AssignmentRepository;
 import com.example.back_end.repository.ClassroomRepository;
 import com.example.back_end.repository.TaskRepository;
-
 import lombok.Data;
 
 @Component
@@ -21,7 +18,7 @@ import lombok.Data;
 public class GeneticAlgorithmScheduler {
 
     private static final int POPULATION_SIZE = 100; // 种群大小
-    private static final int MAX_GENERATIONS = 500; // 最大迭代次数
+    private static final int MAX_GENERATIONS = 10; // 最大迭代次数
     private static final double MUTATION_RATE = 1.0; // 变异率
     private static final double CROSSOVER_RATE = 0.8; // 交叉率
     private static final Random random = new Random();
@@ -91,18 +88,6 @@ public class GeneticAlgorithmScheduler {
         for (int i = 1; i < POPULATION_SIZE; i++) {
             // 选择
             TaskList parent1 = selectParent(population);
-            // TODO:测试用，之后删去
-            /*
-             * List<Task> parent1Tasks = parent1.getTasks();
-             * if(parent1Tasks.size()!=new HashSet<>(parent1Tasks).size()){
-             * System.out.println("列表中存在重复的任务");
-             * System.out.println("列表大小为："+parent1Tasks.size());
-             * System.out.println("列表中存在的重复任务数："+(parent1Tasks.size()-new
-             * HashSet<>(parent1Tasks).size()));
-             * throw new IllegalStateException("列表中存在重复的任务");
-             * }
-             */
-
             TaskList parent2 = selectParent(population);
 
             TaskList offspring = crossover(parent1, parent2);
@@ -137,17 +122,6 @@ public class GeneticAlgorithmScheduler {
 
         List<Task> parent1Tasks = parent1.getTasks();
         List<Task> parent2Tasks = parent2.getTasks();
-
-        // TODO:测试用，之后删去
-        /*
-         * if(parent1Tasks.size()!=new HashSet<>(parent1Tasks).size()){
-         * System.out.println("列表中存在重复的任务");
-         * System.out.println("列表大小为："+parent1Tasks.size());
-         * System.out.println("列表中存在的重复任务数："+(parent1Tasks.size()-new
-         * HashSet<>(parent1Tasks).size()));
-         * throw new IllegalStateException("列表中存在重复的任务");
-         * }
-         */
 
         int size = parent1Tasks.size();
         // 随机选择一个子区间 L
@@ -216,7 +190,7 @@ public class GeneticAlgorithmScheduler {
         return getBestTaskList(population).getSchedule();
     }
 
-    //TODO:此处可优化效率
+    // TODO:此处可优化效率
     private TaskList createTaskList(List<Task> tasks) {
         TaskList taskList = new TaskList(tasks);
         Schedule schedule = generateScheduleGreedyily(taskList);
@@ -225,7 +199,6 @@ public class GeneticAlgorithmScheduler {
         return taskList;
     }
 
-    // TODO:适当拷贝，优化性能
     private TaskList createTaskList(TaskList taskList) {
         TaskList newTaskList = new TaskList(taskList.getTasks());
         Schedule schedule = generateScheduleGreedyily(newTaskList);
@@ -234,15 +207,15 @@ public class GeneticAlgorithmScheduler {
         return newTaskList;
     }
 
-    public static final int slotsOfWeek = 40; // 一周的时段数量
-    public static final int weeks = 20; // 一学期的周数
-    public static final int slotsOfDay = 8; // 一天的时段数量
     // TODO:验证该贪心算法
-
     private Schedule generateScheduleGreedyily(TaskList taskList) {
         // System.out.println("hashcode: " + taskList.hashCode());
         List<Assignment> assignments = new ArrayList<>();
 
+        // 刷新每个教室的时间占用情况！!!
+        for (Classroom classroom : classrooms) {
+            classroom.releaseAllSlots();
+        }
         // 处理每个排课任务
         for (Task task : taskList.getTasks()) {
             List<Classroom> validClassrooms = classrooms.stream().filter(classroom -> task.isValid(classroom))
@@ -250,12 +223,12 @@ public class GeneticAlgorithmScheduler {
 
             Classroom classroom = null;
             List<Integer> timeSlots = null;
-            //TODO:一门课一周需要排多次，每次时长不同的情况未考虑
+            // TODO:一门课一周需要排多次，每次时长不同的情况未考虑
             // 遍历所有合法的教室
             for (Classroom room : validClassrooms) {
-                //需要排的数量
-                int classNum = task.getHoursOfWeek()/task.getDurationTime();
-                timeSlots = room.tryOccupySlots(task.getStartWeek(), task.getEndWeek(), task.getDurationTime(),
+                // 需要排的数量
+                int classNum = task.getHoursOfWeek() / task.getDurationTime();
+                timeSlots = room.tryOccupySlots(task.getWeeks(), task.getDurationTime(),
                         classNum);
                 if (timeSlots != null) {
                     classroom = room;
@@ -277,20 +250,7 @@ public class GeneticAlgorithmScheduler {
         // 保存每个安排到数据库
         List<Assignment> assignments = schedule.getAssignments();
         for (Assignment assignment : assignments) {
-            com.example.back_end.entity.Assignment entity = new com.example.back_end.entity.Assignment();
-            entity.setCourseId(assignment.getTask().getCourseId());
-            entity.setCourseName(assignment.getTask().getCourseName());
-
-            Classroom classroom = assignment.getClassroom();
-            if(classroom == null){
-                entity.setClassRoomId(null);
-                entity.setClassRoomName(null);
-                entity.setSlot(null);
-            }else{
-                entity.setClassRoomId(classroom.getClassroomId());
-                entity.setClassRoomName(assignment.getClassroom().getClassroomName());
-                entity.setSlot(assignment.getTimeSlotsString());
-            }
+            com.example.back_end.entity.Assignment entity = assignment.toEntity();
 
             try {
                 assignmentRepository.save(entity);
@@ -299,5 +259,66 @@ public class GeneticAlgorithmScheduler {
                 System.err.println("Failed to save entity: " + e.getMessage());
             }
         }
+    }
+
+    /*
+     * 时间冲突检测方法
+     */
+    public List<Assignment> getConflicts() {
+        List<Assignment> conflicts = new ArrayList<>();
+        List<Assignment> assignments = assignmentRepository.findAll().stream().map(assignment -> {
+            Classroom classroom = classrooms.stream()
+                    .filter(c -> c.getClassroomId().equals(assignment.getClassRoomId()))
+                    .findFirst().orElse(null);
+            List<Integer> timeSlots = new ArrayList<>();
+            if (assignment.getSlot() != null) {
+                String[] parts = assignment.getSlot().split(",");
+                for (String part : parts) {
+                    String[] subParts= part.split(":");
+                    String[] timeParts = subParts[1].split("-");
+                    int day= Integer.parseInt(subParts[0]);
+                    int start = Integer.parseInt(timeParts[0]);
+                    int timeSlot = day * Schedule.slotsOfDay + start;
+                    timeSlots.add(timeSlot);
+                }
+            }
+            Task task=tasks.stream()
+                    .filter(t -> t.getTeachingClassId().equals(assignment.getTeachingClassId()))
+                    .findFirst().orElse(null);
+            return new Assignment(classroom, timeSlots, task);
+        }).collect(Collectors.toList());
+
+        for (Classroom classroom : classrooms) {
+            classroom.releaseAllSlots();
+        }
+
+        for (Assignment assignment : assignments) {
+            Classroom classroom = assignment.getClassroom();
+            List<Integer> timeSlots = assignment.getTimeSlots();
+            Task task = assignment.getTask();
+
+            // 检查时间段是否冲突
+            if (classroom != null && timeSlots != null) {
+                List<Integer> weeks = task.getWeeks();
+                for (int timeSlot : timeSlots) {
+                    int start = timeSlot;
+                    int end = start + task.getDurationTime() - 1;
+                    if (!classroom.isRangeAvailable(weeks, start, end)) {
+                        conflicts.add(assignment);
+                        break; // 找到冲突后跳出循环
+                    }
+                }
+                // 如果没有冲突，则占用时间段
+                if (!conflicts.contains(assignment)) {
+                    for (int timeSlot : timeSlots) {
+                        int start = timeSlot;
+                        int end = start + task.getDurationTime() - 1;
+                        classroom.occupyRange(weeks, start, end);
+                    }
+                }
+            }
+        }
+
+        return conflicts;
     }
 }

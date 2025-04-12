@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Assignment {
-    @Id
     @Column(name = "course_id")
     String courseId;
 
@@ -26,7 +25,13 @@ public class Assignment {
     @Column(name = "class_room_name")
     String classRoomName;
 
+    @Id
+    @Column(name = "teaching_class_id")
+    String teachingClassId;
     //时间
     //格式: 5:1-2 周五1到2节
     String slot;
+    //周数
+    //格式: 1,2,3,4,5,6,7,8,9,10,11,12
+    String weeks;
 }

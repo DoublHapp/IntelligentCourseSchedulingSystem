@@ -2,6 +2,7 @@ package com.example.back_end.service;
 
 import org.springframework.stereotype.Service;
 import com.example.back_end.entity.Assignment;
+import com.example.back_end.entity.Task;
 import com.example.back_end.repository.AssignmentRepository;
 import com.example.back_end.util.GeneticAlgorithmScheduler;
 import com.example.back_end.repository.ClassRepository;
@@ -22,26 +23,25 @@ public class AssignmentService {
     private final ClassroomRepository classroomRepository;
 
     public AssignmentService(
-        GeneticAlgorithmScheduler geneticAlgorithmScheduler,
-        AssignmentRepository assignmentRepository,
-        ClassRepository classRepository,
-        TeacherRepository teacherRepository,
-        ClassroomRepository classroomRepository) {
-    this.geneticAlgorithmScheduler = geneticAlgorithmScheduler;
-    this.assignmentRepository = assignmentRepository;
-    this.classRepository = classRepository;
-    this.teacherRepository = teacherRepository;
-    this.classroomRepository = classroomRepository;
-}
+            GeneticAlgorithmScheduler geneticAlgorithmScheduler,
+            AssignmentRepository assignmentRepository,
+            ClassRepository classRepository,
+            TeacherRepository teacherRepository,
+            ClassroomRepository classroomRepository) {
+        this.geneticAlgorithmScheduler = geneticAlgorithmScheduler;
+        this.assignmentRepository = assignmentRepository;
+        this.classRepository = classRepository;
+        this.teacherRepository = teacherRepository;
+        this.classroomRepository = classroomRepository;
+    }
 
-   
-    //生成排课
-    public void generateAssignments(){
+    // 生成排课
+    public void generateAssignments() {
         geneticAlgorithmScheduler.generateSchedule();
     }
 
-     // 获取所有排课结果
-     public List<Assignment> findAll() {
+    // 获取所有排课结果
+    public List<Assignment> findAll() {
         return assignmentRepository.findAll();
     }
 
@@ -96,9 +96,8 @@ public class AssignmentService {
     public List<Object> findAllClasses() {
         return classRepository.findAll().stream()
                 .map(clazz -> Map.of(
-                    "id", clazz.getClassId(),
-                    "name", clazz.getClassName()
-                ))
+                        "id", clazz.getClassId(),
+                        "name", clazz.getClassName()))
                 .collect(java.util.stream.Collectors.toList());
     }
 
@@ -106,9 +105,8 @@ public class AssignmentService {
     public List<Object> findAllTeachers() {
         return teacherRepository.findAll().stream()
                 .map(teacher -> Map.of(
-                    "id", teacher.getId(),
-                    "name", teacher.getName()
-                ))
+                        "id", teacher.getId(),
+                        "name", teacher.getName()))
                 .collect(java.util.stream.Collectors.toList());
     }
 
@@ -116,9 +114,15 @@ public class AssignmentService {
     public List<Object> findAllClassrooms() {
         return classroomRepository.findAll().stream()
                 .map(classroom -> Map.of(
-                    "id", classroom.getClassroomId(),
-                    "name", classroom.getClassroomName()
-                ))
+                        "id", classroom.getClassroomId(),
+                        "name", classroom.getClassroomName()))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    // 检测排课结果冲突
+    public List<Assignment> getConflicts() {
+        return geneticAlgorithmScheduler.getConflicts().stream()
+                .map(assignment -> assignment.toEntity())
                 .collect(java.util.stream.Collectors.toList());
     }
 }

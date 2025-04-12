@@ -18,7 +18,6 @@ public class Task {
     @Column(name = "academic_year_term")
     private String academicYearTerm;
     
-    @Id
     @Column(name = "course_id")
     private String courseId;
     
@@ -34,7 +33,7 @@ public class Task {
     @Column(name = "teaching_class_composition")
     private String teachingClassComposition;
     
-    
+    @Id
     @Column(name = "teaching_class_id")
     private String teachingClassId;
 

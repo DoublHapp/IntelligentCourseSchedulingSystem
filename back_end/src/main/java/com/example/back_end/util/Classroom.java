@@ -27,6 +27,11 @@ public class Classroom extends com.example.back_end.entity.Classroom {
         return timeSlots[slot];
     }
 
+    // 释放所有时间段
+    public void releaseAllSlots() {
+        Arrays.fill(timeSlots, false);
+    }
+
     // 占用某个时间段
     public void occupySlot(int slot) {
         validateSlot(slot);
@@ -87,11 +92,8 @@ public class Classroom extends com.example.back_end.entity.Classroom {
     }
 
     // 检查指定连续周次的某时间段是否可用
-    public boolean isRangeAvailable(int startWeek, int endWeek, int startSlot, int endSlot) {
-        if (startWeek < 0 || endWeek >= WEEKS_PER_SEMESTER || startSlot < 0 || endSlot >= timeSlots.length) {
-            throw new IllegalArgumentException("Invalid week or time slot.");
-        }
-        for (int week = startWeek; week <= endWeek; week++) {
+    public boolean isRangeAvailable(List<Integer> weeks, int startSlot, int endSlot) {
+        for (int week : weeks) {
             for (int i = startSlot; i <= endSlot; i++) {
                 if (timeSlots[week * DAYS_PER_WEEK * SLOTS_PER_DAY + i]) {
                     return false; // 时间段已被占用
@@ -100,19 +102,14 @@ public class Classroom extends com.example.back_end.entity.Classroom {
         }
         return true; // 时间段可用
     }
-
-    //占用指定连续周次的某时间段
-    public void occupyRange(int startWeek, int endWeek, int startSlot, int endSlot) {
-        if (!isRangeAvailable(startWeek, endWeek, startSlot, endSlot)) {
-            throw new IllegalStateException("Some slots in the range are already occupied.");
-        }
-        for (int week = startWeek; week <= endWeek; week++) {
+    // 占用指定连续周次的某时间段
+    public void occupyRange(List<Integer> weeks, int startSlot, int endSlot) {
+        for (int week : weeks) {
             for (int i = startSlot; i <= endSlot; i++) {
                 timeSlots[week * DAYS_PER_WEEK * SLOTS_PER_DAY + i] = true;
             }
         }
     }
-
     // 释放指定连续周次的某时间段
     public void releaseRange(int startWeek, int endWeek, int startSlot, int endSlot) {
         if (startWeek < 0 || endWeek >= WEEKS_PER_SEMESTER || startSlot < 0 || endSlot >= timeSlots.length) {
@@ -131,32 +128,31 @@ public class Classroom extends com.example.back_end.entity.Classroom {
     }
 
     // 尝试占用若干连续时间段
-    public List<Integer> tryOccupySlots(int startWeek, int endWeek, int length, int num) {
+    public List<Integer> tryOccupySlots(List<Integer> weeks, int length, int num) {
         List<Integer> timeSlots = new ArrayList<>();
 
         for (int day = 0; day < DAYS_PER_WEEK; day++) {
             for (int start = day * SLOTS_PER_DAY; start < day * SLOTS_PER_DAY + SLOTS_PER_DAY - length + 1; start++) {
                 int end = start + length - 1;
-                if(isRangeAvailable(startWeek, endWeek, start, end)) {
+                if (isRangeAvailable(weeks, start, end)) {
                     timeSlots.add(start);
-                    break;//每天只排一次
+                    break;// 每天只排一次
                 }
             }
-            if(timeSlots.size() == num) {
+            if (timeSlots.size() == num) {
                 break; // 找到足够的时间段
             }
         }
-        
-        if(timeSlots.size()==num){
+
+        if (timeSlots.size() == num) {
             for (int i = 0; i < timeSlots.size(); i++) {
                 int start = timeSlots.get(i);
                 int end = start + length - 1;
-                occupyRange(startWeek, endWeek, start, end);
+                occupyRange(weeks, start, end);
             }
             return timeSlots;
         }
 
         return null; // 无法占用指定长度的时间段
     }
-
 }

@@ -35,7 +35,6 @@ public class TaskList {
         return true;
     }
 
-    //TODO:tasks的顺序应影响哈希值
     public int hashCode() {
         int result = 1;
         result = 31 * result + (tasks == null ? 0 : tasks.hashCode());
