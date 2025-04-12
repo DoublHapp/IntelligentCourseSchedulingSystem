@@ -80,13 +80,5 @@ public class CourseService {
         courseRepository.deleteById(id);
     }
     
-    // 查找指定课程的先修课程
-    public List<Course> findPrerequisitesForCourse(String courseId) {
-        return courseRepository.findPrerequisitesForCourse(courseId);
-    }
-    
-    // 查找以当前课程为先修课程的课程
-    public List<Course> findCoursesWithPrerequisite(String courseId) {
-        return courseRepository.findCoursesWithPrerequisite(courseId);
-    }
+  
 }

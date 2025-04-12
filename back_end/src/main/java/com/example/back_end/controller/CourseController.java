@@ -7,7 +7,7 @@ import com.example.back_end.service.CourseService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.example.back_end.repository.CourseRepository;
+
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,11 +18,9 @@ import java.util.stream.Collectors;
 public class CourseController {
     
     private final CourseService courseService;
-    private final CourseRepository courseRepository;
     
-    public CourseController(CourseService courseService, CourseRepository courseRepository) {
+    public CourseController(CourseService courseService) {
         this.courseService = courseService;
-        this.courseRepository = courseRepository;
     }
     
     @GetMapping
@@ -74,19 +72,7 @@ public class CourseController {
             return ResponseEntity.ok(ApiResponseDTO.error("搜索课程失败: " + e.getMessage()));
         }
     }
-    
-    @GetMapping("/{id}/prerequisites")
-    public ResponseEntity<ApiResponseDTO<List<CourseDTO>>> getCoursePrerequisites(@PathVariable String id) {
-        try {
-            List<Course> prerequisites = courseService.findPrerequisitesForCourse(id);
-            List<CourseDTO> prerequisiteDTOs = prerequisites.stream()
-                    .map(this::convertToDTO)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(ApiResponseDTO.success("获取先修课程成功", prerequisiteDTOs));
-        } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponseDTO.error("获取先修课程失败: " + e.getMessage()));
-        }
-    }
+  
     
     @PostMapping
     public ResponseEntity<ApiResponseDTO<CourseDTO>> createCourse(@RequestBody Course course) {
@@ -145,13 +131,6 @@ public class CourseController {
     dto.setWeeklyHours(course.getWeeklyHours());
     dto.setIsPurePracticalSession(course.getIsPurePracticalSession());
     
-    // 这里需要查询先修课程信息，可能需要额外的代码来处理
-    // 假设前端只需要先修课程ID列表
-    List<Course> prerequisites = courseRepository.findPrerequisitesForCourse(course.getCourseId());
-    List<String> prerequisiteIds = prerequisites.stream()
-            .map(Course::getCourseId)
-            .collect(Collectors.toList());
-    dto.setPrerequisites(prerequisiteIds);
         return dto;
     }
 }

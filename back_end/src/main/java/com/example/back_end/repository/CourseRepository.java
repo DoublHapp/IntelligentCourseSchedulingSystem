@@ -51,18 +51,7 @@ public interface CourseRepository extends JpaRepository<Course, String> {
      */
     List<Course> findByCredits(Float credits);
     
-    /**
-     * 查询指定课程的先修课程
-     */
-    @Query(value = "SELECT c.* FROM courses c JOIN course_prerequisites cp ON c.course_id = cp.prerequisite_id WHERE cp.course_id = :courseId", nativeQuery = true)
-    List<Course> findPrerequisitesForCourse(@Param("courseId") String courseId);
-    
-    /**
-     * 查询以当前课程为先修课程的课程
-     */
-    @Query(value = "SELECT c.* FROM courses c JOIN course_prerequisites cp ON c.course_id = cp.course_id WHERE cp.prerequisite_id = :courseId", nativeQuery = true)
-    List<Course> findCoursesWithPrerequisite(@Param("courseId") String courseId);
-    
+  
     /**
      * 查询某学院开设的所有课程
      */

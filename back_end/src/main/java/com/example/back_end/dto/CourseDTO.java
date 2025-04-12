@@ -31,5 +31,5 @@ public class CourseDTO {
     private Integer weeklyHours;        // 直接对应
     private String isPurePracticalSession; // 直接对应
     private String description;         // 用于前端显示课程描述
-    private List<String> prerequisites; // 先修课程代码列表
+    
 }
