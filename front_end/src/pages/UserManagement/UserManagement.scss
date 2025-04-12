@@ -393,4 +393,74 @@
             }
         }
     }
+
+
+
+
+    // 表单头部样式
+    .user-form {
+        // 添加过渡效果
+        transition: all 0.3s ease;
+
+        &.with-list {
+            // 当列表显示时形式
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 30px;
+        }
+
+        &.no-list {
+            // 当列表隐藏时的形式
+            margin-top: 0;
+            width: 100%;
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+
+            h3 {
+                margin: 0;
+                font-size: 1.2rem;
+            }
+
+            .toggle-list-button {
+                background-color: #f0f0f0;
+                color: #333;
+                border: none;
+                border-radius: 4px;
+                padding: 6px 12px;
+                cursor: pointer;
+                font-size: 0.9rem;
+
+                &:hover {
+                    background-color: #e0e0e0;
+                }
+            }
+        }
+    }
+
+    // 侧边栏中显示列表按钮
+    .sidebar .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        .show-list-button {
+            padding: 8px 16px;
+            background-color: #f0f0f0;
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-align: center;
+
+            &:hover {
+                background-color: #e0e0e0;
+            }
+        }
+    }
 }

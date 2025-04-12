@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Optional;
@@ -70,6 +71,7 @@ public ResponseEntity<ApiResponseDTO<LoginResponseDTO>> login(@RequestBody Login
                     .success(true)
                     .message("登录成功")
                     .build();
+            
             return ResponseEntity.ok(ApiResponseDTO.success("登录成功", response));
         } else if (authenticated) {
             return ResponseEntity.ok(ApiResponseDTO.error("用户角色不匹配"));
@@ -84,16 +86,26 @@ public ResponseEntity<ApiResponseDTO<LoginResponseDTO>> login(@RequestBody Login
     
     @PostMapping("/register")
     public ResponseEntity<ApiResponseDTO<UserDTO>> register(@RequestBody User user) {
-        try {
-            if (userService.findByUsername(user.getUsername()).isPresent()) {
-                return ResponseEntity.ok(ApiResponseDTO.error("用户名已存在"));
-            }
-            User savedUser = userService.save(user);
-            UserDTO userDTO = convertToDTO(savedUser);
-            return ResponseEntity.ok(ApiResponseDTO.success("注册成功", userDTO));
-        } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponseDTO.error("注册失败: " + e.getMessage()));
+           try {
+        // 检查用户名是否已存在
+        if (userService.findByUsername(user.getUsername()).isPresent()) {
+            return ResponseEntity.ok(ApiResponseDTO.error("用户名已存在"));
         }
+        
+        // 设置创建时间为当前时间
+        user.setCreatedAt(LocalDateTime.now());
+        
+        // 保存用户
+        User savedUser = userService.save(user);
+        
+        // 转换为DTO返回（不包含密码）
+        UserDTO userDTO = convertToDTO(savedUser);
+        
+        return ResponseEntity.ok(ApiResponseDTO.success("用户注册成功", userDTO));
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.ok(ApiResponseDTO.error("用户注册失败: " + e.getMessage()));
+    }
     }
     
     @GetMapping("/users")
@@ -123,14 +135,30 @@ public ResponseEntity<ApiResponseDTO<LoginResponseDTO>> login(@RequestBody Login
     @PutMapping("/users/{id}")
     public ResponseEntity<ApiResponseDTO<UserDTO>> updateUser(@PathVariable Long id, @RequestBody User user) {
         try {
-            if (!userService.findById(id).isPresent()) {
-                return ResponseEntity.ok(ApiResponseDTO.error("用户不存在"));
+            Optional<User> existingUser = userService.findById(id);
+            if (existingUser.isEmpty()) {
+                return ResponseEntity.ok(ApiResponseDTO.error("未找到用户"));
             }
+            
+            User currentUser = existingUser.get();
+            
+            // 更新用户字段，但保留创建时间
             user.setId(id);
+            user.setCreatedAt(currentUser.getCreatedAt());
+            
+            // 如果密码为空，保留现有密码
+            if (user.getPassword() == null || user.getPassword().isEmpty()) {
+                user.setPassword(currentUser.getPassword());
+            }
+            
             User updatedUser = userService.save(user);
-            return ResponseEntity.ok(ApiResponseDTO.success("更新用户成功", convertToDTO(updatedUser)));
+            
+            UserDTO userDTO = convertToDTO(updatedUser);
+            
+            return ResponseEntity.ok(ApiResponseDTO.success("用户更新成功", userDTO));
         } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponseDTO.error("更新用户失败: " + e.getMessage()));
+            e.printStackTrace();
+            return ResponseEntity.ok(ApiResponseDTO.error("用户更新失败: " + e.getMessage()));
         }
     }
     
@@ -152,7 +180,6 @@ public ResponseEntity<ApiResponseDTO<LoginResponseDTO>> login(@RequestBody Login
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
         dto.setUserIdentity(user.getUserIdentity());
-        dto.setRole(user.getRole());
         dto.setCreatedAt(user.getCreatedAt());
         return dto;
     }

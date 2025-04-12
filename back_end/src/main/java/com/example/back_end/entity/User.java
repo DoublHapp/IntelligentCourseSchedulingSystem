@@ -4,8 +4,6 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -29,8 +27,6 @@ public class User {
     
     private String password;
     
-    @Enumerated(EnumType.STRING)
-    private Role role;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -46,7 +42,5 @@ public class User {
     @Column(name = "user_identity")
     private String userIdentity;
     
-    public enum Role {
-        student, teacher, admin
-    }
+
 }

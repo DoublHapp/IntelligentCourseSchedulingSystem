@@ -38,14 +38,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findRecentUsers();
     
     /**
-     * 根据用户角色查询
-     */
-    List<User> findByRole(String role);
-    
-    /**
      * 查询除管理员外的所有用户
      */
-    @Query("SELECT u FROM User u WHERE u.role != 'admin'")
+    @Query("SELECT u FROM User u WHERE u.userIdentity != 'administrator'")
     List<User> findAllNonAdminUsers();
     
     /**

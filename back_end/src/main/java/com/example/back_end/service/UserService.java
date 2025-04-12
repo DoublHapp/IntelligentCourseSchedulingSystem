@@ -34,11 +34,17 @@ public class UserService {
     }
     
     public User save(User user) {
-        if (user.getPassword() != null && !user.getPassword().isEmpty() && !user.getPassword().startsWith("$2a$")) {
-            // 如果密码不为空且不是已经加密的格式，则进行加密
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-        }
-        return userRepository.save(user);
+          // 如果密码不为空且不是已经加密的格式，则进行加密
+    if (user.getPassword() != null && !user.getPassword().isEmpty() && !user.getPassword().startsWith("$2a$")) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+    }
+    
+    // 如果是新用户（没有ID）且没有设置创建时间，则设置创建时间
+    if (user.getId() == null && user.getCreatedAt() == null) {
+        user.setCreatedAt(LocalDateTime.now());
+    }
+    
+    return userRepository.save(user);
     }
     
     public void deleteById(Long id) {
@@ -54,7 +60,6 @@ public class UserService {
             admin.setUsername("admin");
             admin.setPassword(passwordEncoder.encode("password"));
             admin.setUserIdentity("administrator");
-            admin.setRole(User.Role.admin);
             admin.setCreatedAt(LocalDateTime.now());
             userRepository.save(admin);
             System.out.println("已创建默认管理员用户: admin/password");

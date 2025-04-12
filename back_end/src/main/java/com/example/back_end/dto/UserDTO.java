@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-import com.example.back_end.entity.User;
 
 @Data
 @Builder
@@ -17,7 +16,6 @@ public class UserDTO {
     private Long id;
     private String username;
     private String userIdentity; // 用户身份：学生、教师、管理员
-    private User.Role role;
     private LocalDateTime createdAt;
 
     
