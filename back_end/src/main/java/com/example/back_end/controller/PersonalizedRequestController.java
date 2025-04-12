@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -129,6 +130,107 @@ public class PersonalizedRequestController {
             return ResponseEntity.ok(ApiResponseDTO.error("拒绝申请失败: " + e.getMessage()));
         }
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponseDTO<PersonalizedRequestDTO>> updateRequest(
+            @PathVariable Long id,
+            @RequestBody PersonalizedRequest request) {
+        try {
+            Optional<PersonalizedRequest> existingRequestOpt = requestService.findById(id);
+            if (!existingRequestOpt.isPresent()) {
+                return ResponseEntity.ok(ApiResponseDTO.error("申请不存在"));
+            }
+            
+            // 获取现有请求
+            PersonalizedRequest existingRequest = existingRequestOpt.get();
+            
+            // 验证用户是否有权限修改
+            if (!existingRequest.getUserId().equals(request.getUserId())) {
+                return ResponseEntity.ok(ApiResponseDTO.error("无权修改此申请"));
+            }
+            
+            // 只能修改待处理的申请
+            if (!"pending".equals(existingRequest.getStatus())) {
+                return ResponseEntity.ok(ApiResponseDTO.error("只能修改待处理的申请"));
+            }
+            
+            // 保留原始ID和提交时间
+            request.setId(id);
+            request.setSubmissionTime(existingRequest.getSubmissionTime());
+            request.setStatus("pending");
+            
+            // 打印请求详情，帮助调试
+            System.out.println("修改请求数据: " + request);
+            System.out.println("notTimeRequest字段: " + request.getNotTimeRequest());
+            
+            // 保存更新后的请求
+            PersonalizedRequest updatedRequest = requestService.save(request);
+            return ResponseEntity.ok(ApiResponseDTO.success("修改申请成功", convertToDTO(updatedRequest)));
+        } catch (Exception e) {
+            e.printStackTrace(); // 打印详细错误信息到控制台
+            return ResponseEntity.ok(ApiResponseDTO.error("修改申请失败: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/update")
+public ResponseEntity<ApiResponseDTO<PersonalizedRequestDTO>> updateRequestWithPost(@RequestBody PersonalizedRequest request) {
+    try {
+        Optional<PersonalizedRequest> existingRequestOpt = requestService.findById(request.getId());
+        if (!existingRequestOpt.isPresent()) {
+            return ResponseEntity.ok(ApiResponseDTO.error("申请不存在"));
+        }
+        
+        // 获取现有请求
+        PersonalizedRequest existingRequest = existingRequestOpt.get();
+        
+        // 验证用户是否有权限修改
+        if (!existingRequest.getUserId().equals(request.getUserId())) {
+            return ResponseEntity.ok(ApiResponseDTO.error("无权修改此申请"));
+        }
+        
+        // 只能修改待处理的申请
+        if (!"pending".equals(existingRequest.getStatus())) {
+            return ResponseEntity.ok(ApiResponseDTO.error("只能修改待处理的申请"));
+        }
+        
+        // 保留原始ID和提交时间
+        request.setSubmissionTime(existingRequest.getSubmissionTime());
+        request.setStatus("pending");
+        
+        // 打印请求详情，帮助调试
+        System.out.println("修改请求数据: " + request);
+        System.out.println("notTimeRequest字段: " + request.getNotTimeRequest());
+        
+        // 保存更新后的请求
+        PersonalizedRequest updatedRequest = requestService.save(request);
+        return ResponseEntity.ok(ApiResponseDTO.success("修改申请成功", convertToDTO(updatedRequest)));
+    } catch (Exception e) {
+        e.printStackTrace(); // 打印详细错误信息到控制台
+        return ResponseEntity.ok(ApiResponseDTO.error("修改申请失败: " + e.getMessage()));
+    }
+}
+
+@DeleteMapping("/{id}")
+public ResponseEntity<ApiResponseDTO<Void>> deleteRequest(@PathVariable Long id) {
+    try {
+        Optional<PersonalizedRequest> existingRequest = requestService.findById(id);
+        if (!existingRequest.isPresent()) {
+            return ResponseEntity.ok(ApiResponseDTO.error("申请不存在"));
+        }
+        
+        // 只有待处理的申请可以被删除
+        PersonalizedRequest request = existingRequest.get();
+        if (!"pending".equals(request.getStatus())) {
+            return ResponseEntity.ok(ApiResponseDTO.error("只能撤销待处理的申请"));
+        }
+        
+        requestService.deleteById(id);
+        return ResponseEntity.ok(ApiResponseDTO.success("撤销申请成功", null));
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.ok(ApiResponseDTO.error("撤销申请失败: " + e.getMessage()));
+    }
+}
     
     private PersonalizedRequestDTO convertToDTO(PersonalizedRequest request) {
         PersonalizedRequestDTO dto = new PersonalizedRequestDTO();
@@ -148,6 +250,7 @@ public class PersonalizedRequestController {
         dto.setResponseMessage(request.getResponseMessage());
         dto.setAdminId(request.getAdminId());
         dto.setAdminName(request.getAdminName());
+        dto.setNotTimeRequest(request.getNotTimeRequest());
         return dto;
     }
 }

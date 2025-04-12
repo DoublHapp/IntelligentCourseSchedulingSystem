@@ -41,6 +41,10 @@ public class PersonalizedRequest {
     
     @Column(name = "preferred_time_slot")
     private String preferredTimeSlot; // 期望时间段
+
+
+    @Column(name = "not_time_request", length = 500)
+    private String notTimeRequest; // 非时间相关请求的整合信息
     
     @Column(name = "reason", length = 500)
     private String reason; // 申请原因

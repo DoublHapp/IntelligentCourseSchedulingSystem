@@ -23,6 +23,7 @@ public class PersonalizedRequestDTO {
     private String courseName;
     private String originalTimeSlot; // 原时间段
     private String preferredTimeSlot; // 期望时间段
+    private String notTimeRequest; // 非时间相关请求的整合信息
     private String reason; // 申请原因
     private String status; // pending, approved, rejected
     private LocalDateTime submissionTime;

@@ -310,4 +310,113 @@
             }
         }
     }
+
+
+    // 为申请卡片添加操作按钮样式
+    .request-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #f0f0f0;
+
+        button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+
+            &.edit-button {
+                background-color: #3498db;
+                color: white;
+
+                &:hover {
+                    background-color: #2980b9;
+                }
+
+                &:disabled {
+                    background-color: #95a5a6;
+                    cursor: not-allowed;
+                }
+            }
+
+            &.withdraw-button {
+                background-color: #e74c3c;
+                color: white;
+
+                &:hover {
+                    background-color: #c0392b;
+                }
+
+                &:disabled {
+                    background-color: #95a5a6;
+                    cursor: not-allowed;
+                }
+            }
+        }
+    }
+
+    // 工具栏按钮的禁用状态
+    .request-tools {
+        button {
+            &:disabled {
+                background-color: #95a5a6;
+                cursor: not-allowed;
+
+                &:hover {
+                    background-color: #95a5a6;
+                }
+            }
+        }
+    }
+
+    // 全宽表单组
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    // 注释样式
+    .note {
+        font-size: 0.85rem;
+        font-style: italic;
+        margin-left: 5px;
+        color: #666;
+    }
+
+    // 其他输入框样式
+    .other-input {
+        margin-top: 8px;
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    // 动态表单区域更平滑的过渡效果
+    .form-row {
+        transition: all 0.3s ease;
+    }
+
+    // 加强提示字段必填的显示
+    .required {
+        color: #e74c3c;
+        font-weight: bold;
+        margin-left: 2px;
+    }
+
+    .disabled-select {
+        background-color: #f8f8f8;
+        cursor: not-allowed;
+        opacity: 0.7;
+        border-color: #ddd !important;
+    }
+
+    .form-hint {
+        font-size: 0.75rem;
+        color: #666;
+        margin-top: 4px;
+        font-style: italic;
+    }
 }

@@ -2,18 +2,25 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './PersonalizedRequest.scss';
 
-// 申请类型定义
+// 申请类型定义，与后端PersonalizedRequest实体对应
+// 更新Request接口定义
 interface Request {
     id: number;
     userId: number;
     username: string;
-    userType: 'teacher' | 'student';
-    title: string;
-    requestType: string;
-    courseId?: number;
+    userIdentity: string;  // 学生/教师
+    title?: string;        // 前端添加的字段，后端没有这个字段
+    requestType: string;   // 调整上课时间、更换教室等
+    courseId?: string;
     courseName?: string;
     originalTimeSlot?: string;
     preferredTimeSlot?: string;
+    notTimeRequest?: string;  // 新增字段，用于存储非时间相关请求整合信息
+    // 保留这些字段，但它们在前端处理后会被整合到notTimeRequest
+    originalClassroom?: string;    
+    preferredClassroom?: string;   
+    facilityRequest?: string;      
+    specialArrangement?: string;   
     reason: string;
     status: 'pending' | 'approved' | 'rejected';
     submissionTime: string;
@@ -23,11 +30,25 @@ interface Request {
     adminName?: string;
 }
 
+// API响应类型定义
+interface ApiResponse<T> {
+    code: number;
+    message: string;
+    success: boolean;
+    data: T;
+}
+
 // 课程类型定义
 interface Course {
-    id: number;
-    code: string;
-    name: string;
+    courseId: string;
+    courseName: string;
+}
+
+// 教室类型定义
+interface Classroom {
+    classroomId: string;
+    classroomName: string;
+    teachingBuilding: string;
 }
 
 const PersonalizedRequest = () => {
@@ -35,7 +56,10 @@ const PersonalizedRequest = () => {
     const [user, setUser] = useState<any>(null);
     const [requests, setRequests] = useState<Request[]>([]);
     const [userCourses, setUserCourses] = useState<Course[]>([]);
+    const [classrooms, setClassrooms] = useState<Classroom[]>([]);
     const [isAddMode, setIsAddMode] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -44,8 +68,13 @@ const PersonalizedRequest = () => {
         title: '',
         requestType: '调整上课时间',
         courseId: '',
+        courseName: '',
         originalTimeSlot: '',
         preferredTimeSlot: '',
+        originalClassroom: '',
+        preferredClassroom: '',
+        facilityRequest: '',
+        specialArrangement: '',
         reason: ''
     });
 
@@ -55,6 +84,17 @@ const PersonalizedRequest = () => {
         '更换教室',
         '增加教学设施',
         '特殊教学安排',
+        '其他'
+    ];
+
+    // 可用的教学设施选项
+    const facilityOptions = [
+        '投影仪',
+        '电脑',
+        '音响系统',
+        '实验设备',
+        '网络设施',
+        '多媒体设备',
         '其他'
     ];
 
@@ -88,86 +128,99 @@ const PersonalizedRequest = () => {
     // 获取用户的申请记录和课程数据
     const fetchData = async (userData: any) => {
         setLoading(true);
+        setError(null);
         try {
-            // 在实际项目中，这里应该调用API获取数据
-            // 模拟用户课程数据
-            const mockCourses: Course[] = [];
-
-            if (userData.userIdentity === 'teacher') {
-                // 教师所教授的课程
-                mockCourses.push(
-                    { id: 1, code: 'CS101', name: '计算机导论' },
-                    { id: 2, code: 'CS201', name: '数据结构' },
-                    { id: 3, code: 'CS301', name: '操作系统' }
-                );
-            } else if (userData.userIdentity === 'student') {
-                // 学生所选的课程
-                mockCourses.push(
-                    { id: 1, code: 'CS101', name: '计算机导论' },
-                    { id: 4, code: 'MATH101', name: '高等数学(上)' },
-                    { id: 7, code: 'ENG101', name: '大学英语' }
-                );
+            // 获取用户的申请记录
+            const requestsResponse = await fetch(`http://localhost:8080/api/requests/user/${userData.id}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                },
+                credentials: 'include'
+            });
+            
+            if (!requestsResponse.ok) {
+                throw new Error(`获取申请记录失败: ${requestsResponse.status}`);
+            }
+            
+            const requestsResult: ApiResponse<Request[]> = await requestsResponse.json();
+            
+            if (!requestsResult.success) {
+                throw new Error(requestsResult.message || '获取申请记录失败');
+            }
+            
+            // 格式化日期显示
+            const formattedRequests = requestsResult.data.map(request => ({
+                ...request,
+                submissionTime: new Date(request.submissionTime).toLocaleString(),
+                responseTime: request.responseTime ? new Date(request.responseTime).toLocaleString() : undefined,
+                // 添加兼容前端显示的title字段
+                title: request.requestType + (request.courseName ? ` - ${request.courseName}` : '')
+            }));
+            
+            setRequests(formattedRequests);
+            
+            // 获取用户的课程数据
+                 
+            // 直接获取所有课程数据，无需根据用户身份区分
+            const coursesResponse = await fetch('http://localhost:8080/api/courses', {
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                },
+                credentials: 'include'
+            });
+            
+            if (!coursesResponse.ok) {
+                console.error('获取课程数据失败:', coursesResponse.status);
+                setUserCourses([]);
+            } else {
+                const coursesResult: ApiResponse<any[]> = await coursesResponse.json();
+                
+                if (coursesResult.success && coursesResult.data) {
+                    // 提取所有课程信息
+                    const courses: Course[] = coursesResult.data.map(course => ({
+                        courseId: course.courseId,
+                        courseName: course.courseName
+                    }));
+                    
+                    
+                    
+                    console.log(`成功获取 ${courses.length} 个课程`);
+                    setUserCourses(courses);
+                } else {
+                    console.error('获取课程数据成功但没有数据');
+                    setUserCourses([]);
+                }
             }
 
-            // 模拟用户已提交的申请
-            const mockRequests: Request[] = [
-                {
-                    id: 1,
-                    userId: userData.id,
-                    username: userData.username,
-                    userType: userData.userIdentity as 'teacher' | 'student',
-                    title: '申请将计算机导论调整到下午上课',
-                    requestType: '调整上课时间',
-                    courseId: 1,
-                    courseName: '计算机导论',
-                    originalTimeSlot: '周一上午1-2节',
-                    preferredTimeSlot: '周一下午5-6节',
-                    reason: '上午有重要会议需要参加，希望调整到下午上课。',
-                    status: 'pending',
-                    submissionTime: '2023-06-15 09:30:00'
+            // 获取教室数据，用于更换教室申请
+            const classroomsResponse = await fetch('http://localhost:8080/api/classrooms', {
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
                 },
-                {
-                    id: 2,
-                    userId: userData.id,
-                    username: userData.username,
-                    userType: userData.userIdentity as 'teacher' | 'student',
-                    title: '申请更换教室到多媒体教室',
-                    requestType: '更换教室',
-                    courseId: userData.userIdentity === 'teacher' ? 2 : 4,
-                    courseName: userData.userIdentity === 'teacher' ? '数据结构' : '高等数学(上)',
-                    reason: '当前教室没有多媒体设备，不方便演示课件。',
-                    status: 'approved',
-                    submissionTime: '2023-05-20 14:20:00',
-                    responseTime: '2023-05-22 10:15:00',
-                    responseMessage: '已安排新教室：教学楼A 203（多媒体教室）',
-                    adminId: 1,
-                    adminName: 'admin'
-                },
-                {
-                    id: 3,
-                    userId: userData.id,
-                    username: userData.username,
-                    userType: userData.userIdentity as 'teacher' | 'student',
-                    title: '申请增加实验课时',
-                    requestType: '特殊教学安排',
-                    courseId: userData.userIdentity === 'teacher' ? 3 : 7,
-                    courseName: userData.userIdentity === 'teacher' ? '操作系统' : '大学英语',
-                    reason: '当前课时不足以完成所有实验内容，希望增加实验课时。',
-                    status: 'rejected',
-                    submissionTime: '2023-05-10 16:45:00',
-                    responseTime: '2023-05-12 09:30:00',
-                    responseMessage: '本学期课时已排满，建议在课后安排补充实验。',
-                    adminId: 1,
-                    adminName: 'admin'
+                credentials: 'include'
+            });
+            
+            if (classroomsResponse.ok) {
+                const classroomsResult: ApiResponse<any[]> = await classroomsResponse.json();
+                if (classroomsResult.success && classroomsResult.data) {
+                    setClassrooms(classroomsResult.data.map(room => ({
+                        classroomId: room.classroomId,
+                        classroomName: room.classroomName,
+                        teachingBuilding: room.teachingBuilding
+                    })));
                 }
-            ];
-
-            setUserCourses(mockCourses);
-            setRequests(mockRequests);
+            } else {
+                console.error('获取教室数据失败');
+                setClassrooms([]);
+            }
+            
             setLoading(false);
         } catch (error) {
             console.error('加载数据失败:', error);
-            setError('加载数据失败，请重试');
+            setError(`加载数据失败: ${error instanceof Error ? error.message : '未知错误'}`);
             setLoading(false);
         }
     };
@@ -175,30 +228,89 @@ const PersonalizedRequest = () => {
     // 处理表单输入变化
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value
-        });
-
-        // 如果选择了课程，自动填写当前时间段
-        if (name === 'courseId' && value) {
-            const courseId = parseInt(value);
-            const selectedCourse = userCourses.find(course => course.id === courseId);
-
-            if (selectedCourse) {
-                // 这里可以根据课程ID获取实际的课程时间段
-                // 在实际应用中，应该从后端获取该课程的实际排课时间
-                const mockTimeSlot = courseId === 1 ? '周一上午1-2节' :
-                    courseId === 2 ? '周二下午5-6节' :
-                        courseId === 3 ? '周三上午3-4节' :
-                            courseId === 4 ? '周四下午1-2节' :
-                                '未知时间段';
-
-                setFormData(prevData => ({
-                    ...prevData,
-                    originalTimeSlot: mockTimeSlot
-                }));
+    
+        // 在编辑模式下不允许修改请求类型
+        if (name === 'requestType' && isEditMode) {
+            return; // 直接返回，不处理此更改
+        }
+        
+        if (name === 'courseId') {
+            const selectedCourse = userCourses.find(course => course.courseId === value);
+            
+            setFormData({
+                ...formData,
+                [name]: value,
+                courseName: selectedCourse?.courseName || ''
+            });
+            
+            // 获取该课程的排课时间和教室
+            if (value) {
+                fetchCourseDetails(value);
             }
+        } else if (name === 'requestType') {
+            // 更改申请类型时重置相关字段
+            setFormData({
+                ...formData,
+                [name]: value,
+                // 如果不是调整时间，则清空时间相关字段
+                originalTimeSlot: value === '调整上课时间' ? formData.originalTimeSlot : '',
+                preferredTimeSlot: value === '调整上课时间' ? formData.preferredTimeSlot : '',
+                // 如果不是更换教室，则清空教室相关字段
+                originalClassroom: value === '更换教室' ? formData.originalClassroom : '',
+                preferredClassroom: value === '更换教室' ? formData.preferredClassroom : '',
+                // 如果不是增加教学设施，则清空设施相关字段
+                facilityRequest: value === '增加教学设施' ? formData.facilityRequest : '',
+                // 如果不是特殊教学安排，则清空安排相关字段
+                specialArrangement: value === '特殊教学安排' ? formData.specialArrangement : ''
+            });
+        } else {
+            setFormData({
+                ...formData,
+                [name]: value
+            });
+        }
+    };
+    
+    // 获取课程详细信息（时间和教室）
+    const fetchCourseDetails = async (courseId: string) => {
+        try {
+            const response = await fetch(`http://localhost:8080/api/assignments/${courseId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                },
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                console.error(`获取课程详情失败: ${response.status}`);
+                return;
+            }
+            
+            const result: ApiResponse<any> = await response.json();
+            
+            if (result.success && result.data) {
+                const assignment = result.data;
+                
+                // 解析时间槽，slot格式: 5:1-2 表示周五1到2节
+                if (assignment.slot) {
+                    const dayMap = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+                    const [day, period] = assignment.slot.split(':');
+                    const dayNum = parseInt(day);
+                    
+                    if (dayNum >= 1 && dayNum <= 7) {
+                        const dayName = dayMap[dayNum];
+                        const timeSlot = `${dayName}${period.replace('-', '到')}节`;
+                        
+                        setFormData(prevData => ({
+                            ...prevData,
+                            originalTimeSlot: timeSlot,
+                        }));
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('获取课程详情失败:', error);
         }
     };
 
@@ -208,73 +320,311 @@ const PersonalizedRequest = () => {
             title: '',
             requestType: '调整上课时间',
             courseId: '',
+            courseName: '',
             originalTimeSlot: '',
             preferredTimeSlot: '',
+            originalClassroom: '',
+            preferredClassroom: '',
+            facilityRequest: '',
+            specialArrangement: '',
             reason: ''
         });
         setIsAddMode(true);
+        setIsEditMode(false);
+        setSelectedRequest(null);
+        setError(null);
     };
 
-    // 取消添加
+    // 准备编辑申请
+    const handleEditRequest = (request: Request) => {
+         // 只能编辑待处理的申请
+    if (request.status !== 'pending') {
+        alert('只能修改待处理的申请');
+        return;
+    }
+
+    // 解析非时间请求
+    const parsedRequest = parseNotTimeRequest(request);
+
+    setSelectedRequest(request);
+    setFormData({
+        title: request.title || '',
+        requestType: request.requestType || '调整上课时间', // 保留原申请类型
+        courseId: request.courseId || '',
+        courseName: request.courseName || '',
+        originalTimeSlot: request.originalTimeSlot || '',
+        preferredTimeSlot: request.preferredTimeSlot || '',
+        // 优先使用原始字段，如果没有则使用从notTimeRequest解析出的字段
+        originalClassroom: request.originalClassroom || parsedRequest.originalClassroom || '',
+        preferredClassroom: request.preferredClassroom || parsedRequest.preferredClassroom || '',
+        facilityRequest: request.facilityRequest || parsedRequest.facilityRequest || '',
+        specialArrangement: request.specialArrangement || parsedRequest.specialArrangement || '',
+        reason: request.reason || ''
+    });
+    setIsEditMode(true);
+    setIsAddMode(false);
+    setError(null);
+    };
+
+    // 撤销申请
+    const handleWithdrawRequest = async (request: Request) => {
+        // 只能撤销待处理的申请
+        if (request.status !== 'pending') {
+            alert('只能撤销待处理的申请');
+            return;
+        }
+
+        if (window.confirm('确定要撤销此申请吗？撤销后将无法恢复。')) {
+            try {
+                const response = await fetch(`http://localhost:8080/api/requests/${request.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    throw new Error(`HTTP error! Status: ${response.status}, Body: ${errorBody}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('申请已成功撤销');
+                    // 刷新数据
+                    fetchData(user);
+                    
+                    // 如果正在编辑被撤销的申请，则关闭编辑表单
+                    if (selectedRequest && selectedRequest.id === request.id) {
+                        setIsEditMode(false);
+                        setSelectedRequest(null);
+                    }
+                } else {
+                    setError(result.message || '撤销申请失败');
+                }
+            } catch (error) {
+                console.error('撤销申请失败:', error);
+                setError(`撤销申请失败: ${error instanceof Error ? error.message : '未知错误'}`);
+            }
+        }
+    };
+
+    // 取消添加或编辑
     const handleCancel = () => {
         setIsAddMode(false);
+        setIsEditMode(false);
+        setSelectedRequest(null);
         setFormData({
             title: '',
             requestType: '调整上课时间',
             courseId: '',
+            courseName: '',
             originalTimeSlot: '',
             preferredTimeSlot: '',
+            originalClassroom: '',
+            preferredClassroom: '',
+            facilityRequest: '',
+            specialArrangement: '',
             reason: ''
         });
+        setError(null);
     };
 
     // 提交申请
-    const handleSubmitRequest = () => {
-        if (!formData.title || !formData.reason) {
-            setError('标题和申请理由不能为空');
+    const handleSubmitRequest = async () => {
+        if (!formData.reason) {
+            setError('申请理由不能为空');
             return;
         }
-
-        // 如果是调整时间类型的申请，则需要填写首选时间
+    
+        // 按申请类型进行字段验证
         if (formData.requestType === '调整上课时间' && !formData.preferredTimeSlot) {
             setError('请填写首选时间段');
             return;
         }
+    
+        if (formData.requestType === '更换教室' && !formData.preferredClassroom) {
+            setError('请选择首选教室');
+            return;
+        }
+    
+        if (formData.requestType === '增加教学设施' && !formData.facilityRequest) {
+            setError('请选择需要增加的教学设施');
+            return;
+        }
+    
+        if (formData.requestType === '特殊教学安排' && !formData.specialArrangement) {
+            setError('请填写特殊教学安排');
+            return;
+        }
+        
+        try {
+             // 如果是编辑模式，确保使用原来的申请类型
+        const actualRequestType = (isEditMode && selectedRequest) 
+        ? selectedRequest.requestType 
+        : formData.requestType;
+            // 根据申请类型，准备不同的额外字段
+            let extraFields = {};
+            let notTimeRequest = "";
+            
+            switch(formData.requestType) {
+                case '调整上课时间':
+                    extraFields = {
+                        originalTimeSlot: formData.originalTimeSlot,
+                        preferredTimeSlot: formData.preferredTimeSlot,
+                        notTimeRequest: null // 时间相关请求，不使用notTimeRequest
+                    };
+                    break;
+                case '更换教室':
+                    notTimeRequest = `更换教室：原教室：${formData.originalClassroom || '未指定'};请求教室：${formData.preferredClassroom}`;
+                    extraFields = {
+                        originalTimeSlot: null,
+                        preferredTimeSlot: null,
+                        notTimeRequest: notTimeRequest,
+                        originalClassroom: formData.originalClassroom,
+                        preferredClassroom: formData.preferredClassroom
+                    };
+                    break;
+                case '增加教学设施':
+                    notTimeRequest = `增加教学设施：${formData.facilityRequest}`;
+                    extraFields = {
+                        originalTimeSlot: null,
+                        preferredTimeSlot: null,
+                        notTimeRequest: notTimeRequest,
+                        facilityRequest: formData.facilityRequest
+                    };
+                    break;
+                case '特殊教学安排':
+                    notTimeRequest = `特殊教学安排：${formData.specialArrangement}`;
+                    extraFields = {
+                        originalTimeSlot: null,
+                        preferredTimeSlot: null,
+                        notTimeRequest: notTimeRequest,
+                        specialArrangement: formData.specialArrangement
+                    };
+                    break;
+                default: // '其他'
+                    notTimeRequest = `其他请求：${formData.reason}`;
+                    extraFields = {
+                        originalTimeSlot: null,
+                        preferredTimeSlot: null,
+                        notTimeRequest: notTimeRequest
+                    };
+                    break;
+            }
+            
+            let requestData = {
+                userId: user.id,
+                username: user.username,
+                userIdentity: user.userIdentity,
+                requestType: formData.requestType,
+                courseId: formData.courseId || null,
+                courseName: formData.courseName || null,
+                reason: formData.reason,
+                status: 'pending',
+                ...extraFields
+            };
+            
+            let url = 'http://localhost:8080/api/requests';
+            let method = 'POST';
+            let successMessage = '申请已成功提交！';
+            
+            
+            if (isEditMode && selectedRequest) {
+                // 简化请求数据，只包含必要的字段
+            requestData = {
+        id: selectedRequest.id,
+        userId: user.id,
+        username: user.username,
+        requestType: formData.requestType,
+        courseId: formData.courseId || null,
+        courseName: formData.courseName || null,
+        reason: formData.reason,
+        status: 'pending'
+    };
+    
+    // 根据请求类型，添加特定字段
+    if (formData.requestType === '调整上课时间') {
+        requestData.originalTimeSlot = formData.originalTimeSlot;
+        requestData.preferredTimeSlot = formData.preferredTimeSlot;
+    } else {
+        requestData.notTimeRequest = notTimeRequest;
+    }
+    
+    url = 'http://localhost:8080/api/requests/update';
+    method = 'POST';
+    successMessage = '申请修改成功！';
+            }
+            
 
-        // 创建新申请
-        const selectedCourse = formData.courseId ?
-            userCourses.find(course => course.id === parseInt(formData.courseId)) : undefined;
+            // 在handleSubmitRequest中添加
+            console.log('发送修改请求:', JSON.stringify(requestData, null, 2));
 
-        const newRequest: Request = {
-            id: Math.max(...requests.map(r => r.id), 0) + 1,
-            userId: user.id,
-            username: user.username,
-            userType: user.userIdentity as 'teacher' | 'student',
-            title: formData.title,
-            requestType: formData.requestType,
-            courseId: selectedCourse ? parseInt(formData.courseId) : undefined,
-            courseName: selectedCourse?.name,
-            originalTimeSlot: formData.originalTimeSlot || undefined,
-            preferredTimeSlot: formData.preferredTimeSlot || undefined,
-            reason: formData.reason,
-            status: 'pending',
-            submissionTime: new Date().toLocaleString()
-        };
 
-        setRequests([newRequest, ...requests]);
-        setError(null);
-        setIsAddMode(false);
-        setFormData({
-            title: '',
-            requestType: '调整上课时间',
-            courseId: '',
-            originalTimeSlot: '',
-            preferredTimeSlot: '',
-            reason: ''
-        });
 
-        // 显示成功消息
-        alert('申请已成功提交！');
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                },
+                credentials: 'include',
+                body: JSON.stringify(requestData)
+            });
+            
+            console.log('响应状态:', response.status, response.statusText);
+        
+        // 先获取响应文本，用于调试
+        const responseText = await response.text();
+        console.log('响应内容:', responseText);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}, Body: ${responseText}`);
+        }
+        
+        // 只有在响应成功时，才尝试解析JSON
+        let result;
+        try {
+            // 因为我们已经消费了响应体，需要手动解析JSON
+            result = JSON.parse(responseText);
+        } catch (e) {
+            console.error('解析响应JSON失败:', e);
+            throw new Error(`解析响应失败: ${responseText}`);
+        }
+        
+        if (result.success) {
+            // 成功提交后，重新获取最新的申请列表
+            await fetchData(user);
+            setIsAddMode(false);
+            setIsEditMode(false);
+            setSelectedRequest(null);
+            setFormData({
+                title: '',
+                requestType: '调整上课时间',
+                courseId: '',
+                courseName: '',
+                originalTimeSlot: '',
+                preferredTimeSlot: '',
+                originalClassroom: '',
+                preferredClassroom: '',
+                facilityRequest: '',
+                specialArrangement: '',
+                reason: ''
+            });
+            setError(null);
+            alert(successMessage);
+        } else {
+            setError(result.message || (isEditMode ? '修改申请失败' : '提交申请失败'));
+        }
+    } catch (error) {
+        console.error(isEditMode ? '修改申请失败:' : '提交申请失败:', error);
+        setError(`${isEditMode ? '修改' : '提交'}申请失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
     };
 
     // 返回仪表盘
@@ -302,6 +652,175 @@ const PersonalizedRequest = () => {
         }
     };
 
+    // 在组件内添加一个解析非时间请求的辅助函数
+    const parseNotTimeRequest = (request: Request): {
+        originalClassroom?: string,
+        preferredClassroom?: string,
+        facilityRequest?: string,
+        specialArrangement?: string
+    } => {
+        if (!request.notTimeRequest) return {};
+        
+        const result: any = {};
+        
+        // 解析更换教室请求
+        if (request.requestType === '更换教室') {
+            const match = request.notTimeRequest.match(/原教室：(.*?);请求教室：(.*?)($|;)/);
+            if (match) {
+                result.originalClassroom = match[1] === '未指定' ? '' : match[1];
+                result.preferredClassroom = match[2];
+            }
+        }
+        
+        // 解析增加教学设施请求
+        else if (request.requestType === '增加教学设施') {
+            const match = request.notTimeRequest.match(/增加教学设施：(.*?)($|;)/);
+            if (match) {
+                result.facilityRequest = match[1];
+            }
+        }
+        
+        // 解析特殊教学安排请求
+        else if (request.requestType === '特殊教学安排') {
+            const match = request.notTimeRequest.match(/特殊教学安排：(.*?)($|;)/);
+            if (match) {
+                result.specialArrangement = match[1];
+            }
+        }
+        
+        return result;
+    };
+
+    // 渲染基于申请类型的动态表单字段
+    const renderDynamicFormFields = () => {
+        switch (formData.requestType) {
+            case '调整上课时间':
+                return (
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label htmlFor="originalTimeSlot">原时间段</label>
+                            <input
+                                type="text"
+                                id="originalTimeSlot"
+                                name="originalTimeSlot"
+                                value={formData.originalTimeSlot}
+                                onChange={handleInputChange}
+                                placeholder="例如：周一上午1-2节"
+                                
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="preferredTimeSlot">
+                                首选时间段 <span className="required">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="preferredTimeSlot"
+                                name="preferredTimeSlot"
+                                value={formData.preferredTimeSlot}
+                                onChange={handleInputChange}
+                                placeholder="例如：周二下午5-6节"
+                                required
+                            />
+                        </div>
+                    </div>
+                );
+            
+            case '更换教室':
+                return (
+                    <div className="form-row">
+                    <div className="form-group">
+                        <label htmlFor="originalClassroom">原教室</label>
+                        <input
+                            type="text"
+                            id="originalClassroom"
+                            name="originalClassroom"
+                            value={formData.originalClassroom}
+                            onChange={handleInputChange}
+                            placeholder="例如：A-101"
+                        />
+                    </div>
+        
+                    <div className="form-group">
+                        <label htmlFor="preferredClassroom">
+                            首选教室 <span className="required">*</span>
+                        </label>
+                        <select
+                            id="preferredClassroom"
+                            name="preferredClassroom"
+                            value={formData.preferredClassroom}
+                            onChange={handleInputChange}
+                            required
+                        >
+                            <option value="">请选择教室</option>
+                            {classrooms.map(room => (
+                                <option key={room.classroomId} value={room.classroomName}>
+                                    {room.classroomName} ({room.teachingBuilding})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                );
+            
+            case '增加教学设施':
+                return (
+                    <div className="form-row">
+                        <div className="form-group full-width">
+                            <label htmlFor="facilityRequest">
+                                需要的教学设施 <span className="required">*</span>
+                            </label>
+                            <select
+                                id="facilityRequest"
+                                name="facilityRequest"
+                                value={formData.facilityRequest}
+                                onChange={handleInputChange}
+                                required
+                            >
+                                <option value="">请选择需要的教学设施</option>
+                                {facilityOptions.map((facility, index) => (
+                                    <option key={index} value={facility}>{facility}</option>
+                                ))}
+                            </select>
+                            {formData.facilityRequest === '其他' && (
+                                <input
+                                    type="text"
+                                    className="other-input"
+                                    placeholder="请输入具体设施要求"
+                                    value={formData.facilityRequest === '其他' ? formData.reason : ''}
+                                    onChange={(e) => setFormData({...formData, reason: e.target.value})}
+                                />
+                            )}
+                        </div>
+                    </div>
+                );
+            
+            case '特殊教学安排':
+                return (
+                    <div className="form-row">
+                        <div className="form-group full-width">
+                            <label htmlFor="specialArrangement">
+                                特殊教学安排 <span className="required">*</span>
+                            </label>
+                            <textarea
+                                id="specialArrangement"
+                                name="specialArrangement"
+                                value={formData.specialArrangement}
+                                onChange={handleInputChange}
+                                placeholder="请详细描述特殊教学安排..."
+                                rows={3}
+                                required
+                            />
+                        </div>
+                    </div>
+                );
+            
+            default:
+                return null; // 其他类型不需要额外字段
+        }
+    };
+
     return (
         <div className="personalized-request">
             <header className="request-header">
@@ -319,44 +838,53 @@ const PersonalizedRequest = () => {
                 ) : (
                     <>
                         <div className="request-tools">
-                            <button className="add-request-button" onClick={handleAddRequest}>
+                            <button 
+                                className="add-request-button" 
+                                onClick={handleAddRequest}
+                                disabled={isAddMode || isEditMode}
+                            >
                                 提交新申请
                             </button>
                         </div>
 
-                        {isAddMode && (
+                        {(isAddMode || isEditMode) && (
                             <div className="request-form">
-                                <h3>提交新申请</h3>
+                                <h3>{isEditMode ? '修改申请' : '提交新申请'}</h3>
 
                                 {error && <div className="form-error">{error}</div>}
 
                                 <div className="form-group">
-                                    <label htmlFor="title">申请标题 <span className="required">*</span></label>
+                                    <label htmlFor="title">申请标题</label>
                                     <input
                                         type="text"
                                         id="title"
                                         name="title"
                                         value={formData.title}
                                         onChange={handleInputChange}
-                                        placeholder="例如：申请调整课程时间"
-                                        required
+                                        placeholder="例如：申请调整课程时间（可选填）"
                                     />
                                 </div>
 
                                 <div className="form-row">
-                                    <div className="form-group">
-                                        <label htmlFor="requestType">申请类型</label>
-                                        <select
-                                            id="requestType"
-                                            name="requestType"
-                                            value={formData.requestType}
-                                            onChange={handleInputChange}
-                                        >
-                                            {requestTypes.map((type, index) => (
-                                                <option key={index} value={type}>{type}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                <div className="form-group">
+        <label htmlFor="requestType">申请类型 <span className="required">*</span></label>
+        <select
+            id="requestType"
+            name="requestType"
+            value={formData.requestType}
+            onChange={handleInputChange}
+            required
+            disabled={isEditMode} // 在编辑模式下禁用
+            className={isEditMode ? "disabled-select" : ""} // 添加自定义样式
+        >
+            {requestTypes.map((type, index) => (
+                <option key={index} value={type}>{type}</option>
+            ))}
+        </select>
+        {isEditMode && (
+            <div className="form-hint">申请类型不可修改</div>
+        )}
+    </div>
 
                                     <div className="form-group">
                                         <label htmlFor="courseId">相关课程</label>
@@ -368,52 +896,30 @@ const PersonalizedRequest = () => {
                                         >
                                             <option value="">请选择课程</option>
                                             {userCourses.map(course => (
-                                                <option key={course.id} value={course.id}>
-                                                    {course.code} - {course.name}
+                                                <option key={course.courseId} value={course.courseId}>
+                                                    {course.courseId} - {course.courseName}
                                                 </option>
                                             ))}
                                         </select>
                                     </div>
                                 </div>
 
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label htmlFor="originalTimeSlot">原时间段</label>
-                                        <input
-                                            type="text"
-                                            id="originalTimeSlot"
-                                            name="originalTimeSlot"
-                                            value={formData.originalTimeSlot}
-                                            onChange={handleInputChange}
-                                            placeholder="例如：周一上午1-2节"
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label htmlFor="preferredTimeSlot">
-                                            首选时间段
-                                            {formData.requestType === '调整上课时间' && <span className="required">*</span>}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="preferredTimeSlot"
-                                            name="preferredTimeSlot"
-                                            value={formData.preferredTimeSlot}
-                                            onChange={handleInputChange}
-                                            placeholder="例如：周二下午5-6节"
-                                            required={formData.requestType === '调整上课时间'}
-                                        />
-                                    </div>
-                                </div>
+                                {/* 动态渲染基于申请类型的表单字段 */}
+                                {renderDynamicFormFields()}
 
                                 <div className="form-group">
-                                    <label htmlFor="reason">申请理由 <span className="required">*</span></label>
+                                    <label htmlFor="reason">
+                                        申请理由 <span className="required">*</span>
+                                        {formData.requestType === '其他' && <span className="note">（请在此详细说明您的申请）</span>}
+                                    </label>
                                     <textarea
                                         id="reason"
                                         name="reason"
                                         value={formData.reason}
                                         onChange={handleInputChange}
-                                        placeholder="请详细说明您的申请理由..."
+                                        placeholder={formData.requestType === '其他' ? 
+                                            "请详细说明您的申请内容和理由..." : 
+                                            "请详细说明您的申请理由..."}
                                         required
                                         rows={5}
                                     />
@@ -424,7 +930,7 @@ const PersonalizedRequest = () => {
                                         className="submit-button"
                                         onClick={handleSubmitRequest}
                                     >
-                                        提交
+                                        {isEditMode ? '保存修改' : '提交申请'}
                                     </button>
                                     <button
                                         className="cancel-button"
@@ -443,67 +949,138 @@ const PersonalizedRequest = () => {
                                 <div className="no-requests">您还没有提交过申请</div>
                             ) : (
                                 <div className="requests-container">
-                                    {requests.map(request => (
-                                        <div key={request.id} className="request-card">
-                                            <div className="request-header">
-                                                <h3>{request.title}</h3>
-                                                <div className={`request-status ${getStatusClass(request.status)}`}>
-                                                    {getStatusName(request.status)}
+                                    {requests.map(request => {
+                                        // 解析非时间请求
+                                        const parsedRequest = parseNotTimeRequest(request);
+                                        
+                                        // 合并原始请求和解析后的字段
+                                        const displayRequest = {
+                                            ...request,
+                                            originalClassroom: request.originalClassroom || parsedRequest.originalClassroom,
+                                            preferredClassroom: request.preferredClassroom || parsedRequest.preferredClassroom,
+                                            facilityRequest: request.facilityRequest || parsedRequest.facilityRequest,
+                                            specialArrangement: request.specialArrangement || parsedRequest.specialArrangement
+                                        };
+                                        
+                                        return (
+                                            <div key={displayRequest.id} className="request-card">
+                                                <div className="request-header">
+                                                    <h3>{displayRequest.title || `${displayRequest.requestType}申请`}</h3>
+                                                    <div className={`request-status ${getStatusClass(displayRequest.status)}`}>
+                                                        {getStatusName(displayRequest.status)}
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <div className="request-info">
-                                                <div className="info-row">
-                                                    <span className="info-label">申请类型:</span>
-                                                    <span className="info-value">{request.requestType}</span>
-                                                </div>
-
-                                                {request.courseName && (
+                                                <div className="request-info">
                                                     <div className="info-row">
-                                                        <span className="info-label">相关课程:</span>
-                                                        <span className="info-value">{request.courseName}</span>
+                                                        <span className="info-label">申请类型:</span>
+                                                        <span className="info-value">{displayRequest.requestType}</span>
+                                                    </div>
+
+                                                    {displayRequest.courseName && (
+                                                        <div className="info-row">
+                                                            <span className="info-label">相关课程:</span>
+                                                            <span className="info-value">{displayRequest.courseName}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {displayRequest.originalTimeSlot && (
+                                                        <div className="info-row">
+                                                            <span className="info-label">原时间段:</span>
+                                                            <span className="info-value">{displayRequest.originalTimeSlot}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {displayRequest.preferredTimeSlot && (
+                                                        <div className="info-row">
+                                                            <span className="info-label">首选时间段:</span>
+                                                            <span className="info-value">{displayRequest.preferredTimeSlot}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {/* 动态显示非时间相关请求信息 */}
+                                                    {displayRequest.notTimeRequest && displayRequest.requestType !== '调整上课时间' && (
+                                                        <div className="info-row">
+                                                            <span className="info-label">请求详情:</span>
+                                                            <span className="info-value">{displayRequest.notTimeRequest}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {displayRequest.originalClassroom && (
+                                                        <div className="info-row">
+                                                            <span className="info-label">原教室:</span>
+                                                            <span className="info-value">{displayRequest.originalClassroom}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {displayRequest.preferredClassroom && (
+                                                        <div className="info-row">
+                                                            <span className="info-label">首选教室:</span>
+                                                            <span className="info-value">{displayRequest.preferredClassroom}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {displayRequest.facilityRequest && (
+                                                        <div className="info-row">
+                                                            <span className="info-label">需要设施:</span>
+                                                            <span className="info-value">{displayRequest.facilityRequest}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {displayRequest.specialArrangement && (
+                                                        <div className="info-row">
+                                                            <span className="info-label">特殊安排:</span>
+                                                            <span className="info-value">{displayRequest.specialArrangement}</span>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="info-row">
+                                                        <span className="info-label">申请理由:</span>
+                                                        <span className="info-value reason">{displayRequest.reason}</span>
+                                                    </div>
+
+                                                    <div className="info-row">
+                                                        <span className="info-label">提交时间:</span>
+                                                        <span className="info-value">{displayRequest.submissionTime}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* 待处理的申请显示操作按钮 */}
+                                                {displayRequest.status === 'pending' && (
+                                                    <div className="request-actions">
+                                                        <button
+                                                            className="edit-button"
+                                                            onClick={() => handleEditRequest(displayRequest)}
+                                                            disabled={isAddMode || isEditMode}
+                                                        >
+                                                            修改
+                                                        </button>
+                                                        <button
+                                                            className="withdraw-button"
+                                                            onClick={() => handleWithdrawRequest(displayRequest)}
+                                                            disabled={isAddMode || isEditMode}
+                                                        >
+                                                            撤销
+                                                        </button>
                                                     </div>
                                                 )}
 
-                                                {request.originalTimeSlot && (
-                                                    <div className="info-row">
-                                                        <span className="info-label">原时间段:</span>
-                                                        <span className="info-value">{request.originalTimeSlot}</span>
-                                                    </div>
-                                                )}
-
-                                                {request.preferredTimeSlot && (
-                                                    <div className="info-row">
-                                                        <span className="info-label">首选时间段:</span>
-                                                        <span className="info-value">{request.preferredTimeSlot}</span>
-                                                    </div>
-                                                )}
-
-                                                <div className="info-row">
-                                                    <span className="info-label">申请理由:</span>
-                                                    <span className="info-value reason">{request.reason}</span>
-                                                </div>
-
-                                                <div className="info-row">
-                                                    <span className="info-label">提交时间:</span>
-                                                    <span className="info-value">{request.submissionTime}</span>
-                                                </div>
-                                            </div>
-
-                                            {(request.status === 'approved' || request.status === 'rejected') && (
-                                                <div className="response-section">
-                                                    <h4>教务处回复</h4>
-                                                    <div className="response-content">
-                                                        <p className="response-message">{request.responseMessage}</p>
-                                                        <div className="response-info">
-                                                            <span>处理人: {request.adminName}</span>
-                                                            <span>回复时间: {request.responseTime}</span>
+                                                {/* 已处理的申请显示回复 */}
+                                                {(displayRequest.status === 'approved' || displayRequest.status === 'rejected') && (
+                                                    <div className="response-section">
+                                                        <h4>教务处回复</h4>
+                                                        <div className="response-content">
+                                                            <p className="response-message">{displayRequest.responseMessage}</p>
+                                                            <div className="response-info">
+                                                                <span>处理人: {displayRequest.adminName || '系统管理员'}</span>
+                                                                <span>回复时间: {displayRequest.responseTime || '未知'}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
