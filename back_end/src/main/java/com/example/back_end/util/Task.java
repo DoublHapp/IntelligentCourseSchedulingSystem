@@ -61,6 +61,7 @@ public class Task extends com.example.back_end.entity.Task {
         setTeacherEmployeeId(task.getTeacherEmployeeId());
         setTeachingClassComposition(task.getTeachingClassComposition());
         setTeachingClassId(task.getTeachingClassId());
+        setCourseNature(task.getCourseNature());
         initialize();
     }
 
