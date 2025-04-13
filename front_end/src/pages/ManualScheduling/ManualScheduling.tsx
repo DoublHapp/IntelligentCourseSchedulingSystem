@@ -87,7 +87,6 @@ const ManualScheduling = () => {
       // 模拟从后端获取数据
       fetchTasks();
       fetchClassrooms();
-      console.log(classrooms)
     } catch (error) {
       console.error('用户数据解析错误:', error);
       localStorage.removeItem('user');
@@ -130,7 +129,6 @@ const ManualScheduling = () => {
       const result: ApiResponse<Classroom[]> = await response.json();
       if (result.success && result.data) {
         setClassrooms(result.data);
-        console.log(1111111);
       } else {
         throw new Error(result.message || '获取教室数据失败');
       }
@@ -161,11 +159,11 @@ const ManualScheduling = () => {
       }
       const result: ApiResponse<ScheduleResult[]> = await response.json();
       if (result.success && result.data.length > 0) {
-        setTimeConflicts(result.data);
-        return true; // 返回冲突状态
+        setTimeConflicts(result.data);;
+        return false; // 返回冲突状态
       }else if (result.success && result.data.length === 0) {
         setTimeConflicts([]); // 没有冲突
-        return false; // 返回没有冲突的状态
+        return true; // 返回没有冲突的状态
       }else {
         throw new Error(result.message || '时间冲突检测失败');
       }
@@ -204,21 +202,37 @@ const ManualScheduling = () => {
     
     // 检查冲突
     const hasNoConflicts = await checkConflicts();
-    
-    if (hasNoConflicts) { //////////////////////////////////////////////////////////////////
-      // 在真实应用中，这里应该调用API保存排课结果
+
+    if (hasNoConflicts) { 
+      // 保存排课结果
+      console.log(selectedClassroom)
       const scheduleResult: ScheduleResult = {
         courseId: selectedTask.courseId,
         courseName: selectedTask.courseName,
         classroomId: selectedClassroom[0],
         classroomName: selectedClassroom[1],
-        slot: '',
+        slot: `${selectedWeek}:${selectedPeriod*2+1}-${selectedPeriod*2+2}`,
         weeks: `${selectedWeek}`,
         teachingClassId: selectedTask.teachingClassId,
       };
-      
-      console.log('排课结果:', scheduleResult);
-      
+
+      try{
+        const response = await fetch('http://localhost:8080/api/assignments/create',{
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          },
+          body: JSON.stringify(scheduleResult),
+        });
+        if (!response.ok) {
+          throw new Error(`排课失败: ${response.status}`);
+        }
+      }catch{
+        console.error('排课失败:', error);
+      }
+      console.log('排课成功:', scheduleResult);
       // 更新任务状态
       const updatedTasks = tasks.map(task => 
         task.teachingClassId === selectedTask.teachingClassId 
@@ -344,8 +358,6 @@ const ManualScheduling = () => {
                     <option value={3}>星期三</option>
                     <option value={4}>星期四</option>
                     <option value={5}>星期五</option>
-                    <option value={6}>星期六</option>
-                    <option value={7}>星期日</option>
                   </select>
                 </div>
                 
@@ -361,8 +373,6 @@ const ManualScheduling = () => {
                     <option value={1}>第3-4节</option>
                     <option value={2}>第5-6节</option>
                     <option value={3}>第7-8节</option>
-                    <option value={4}>第9-10节</option>
-                    <option value={5}>第11-12节</option>
                   </select>
                 </div>
                 
