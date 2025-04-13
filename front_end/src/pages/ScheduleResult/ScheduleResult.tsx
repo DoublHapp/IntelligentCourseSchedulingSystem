@@ -1,21 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ScheduleResult.scss';
-// 导入React图标库
-import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
-//导出课表相关
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// 与后端 Assignment 实体对应的课程安排类型定义
+// 对应修改 Assignment 接口，增加 weeks 字段
 interface Assignment {
   courseId: string;
   courseName: string;
   classRoomId: string;
   classRoomName: string;
-  slot: string; // 格式: 5:1-2 表示周五1到2节(不是第1-2周)
+  teachingClassId: string;
+  slot: string; // 格式: 5:1-2 表示周五1到2节
+  weeks: string; // 格式: 1,2,3,4,5,6,7,8,9,10,11,12
 }
 
 // 前端使用的扩展课程安排类型，包含更多展示信息
@@ -31,10 +30,11 @@ interface CourseSchedule {
   endPeriod: number;      // 结束节次
   slot: string;           // 当前显示的单个时间段
   fullSlot: string;       // 原始完整的slot字符串，包含所有时间段
+  weeks: number[];        // 课程安排的周次列表
 }
 
 // 视图类型定义
-type ViewMode = 'week' | 'semester' | 'overview';
+type ViewMode = 'week' | 'semester';
 
 // 查看方式类型定义
 type ScheduleType = 'class' | 'teacher' | 'classroom' | 'overview';
@@ -71,7 +71,8 @@ const ScheduleResult = () => {
   const modalRef = useRef<HTMLDivElement>(null);
   // 添加新的状态来控制课程列表的显示和隐藏
   const [showCourseList, setShowCourseList] = useState(true);
-
+  // 添加过滤周次的状态
+  const [filterByWeek, setFilterByWeek] = useState(true);
 
   // 全部课程数据
   const [allCourseSchedules, setAllCourseSchedules] = useState<CourseSchedule[]>([]);
@@ -359,6 +360,11 @@ const ScheduleResult = () => {
       // 保存原始的完整slot字符串，用于显示在详情页
       const fullSlot = assignment.slot;
 
+      // 解析weeks字符串为数字数组
+      const weeks = assignment.weeks ?
+        assignment.weeks.split(',').map(w => parseInt(w)) :
+        []; // 如果没有weeks字段，则默认为空数组
+
       // 处理slot格式，可能有多个时间段（如"1:1-2,2:1-2"）
       const slots = assignment.slot ? assignment.slot.split(',') : [];
 
@@ -379,7 +385,7 @@ const ScheduleResult = () => {
 
         // 为每一个完整的时间段创建一个对象
         schedules.push({
-          id: assignment.courseId + '_' + slot, // 使用课程ID和时间段作为唯一标识
+          id: assignment.teachingClassId + '_' + slot, // 使用teachingClassId和时间段作为唯一标识
           courseId: assignment.courseId,
           courseName: assignment.courseName,
           classroom: assignment.classRoomName,
@@ -389,7 +395,8 @@ const ScheduleResult = () => {
           startPeriod: startPeriod,
           endPeriod: endPeriod,
           slot: slot,
-          fullSlot: fullSlot  // 添加完整的slot信息
+          fullSlot: fullSlot,
+          weeks: weeks // 添加周次信息
         });
       });
     });
@@ -461,18 +468,20 @@ const ScheduleResult = () => {
 
   // 视图模式下，添加周次选择器
   const renderWeekSelector = () => {
+    // 切换到上一周
     const handlePrevWeek = () => {
       if (currentWeek > 1) {
         setCurrentWeek(currentWeek - 1);
       }
     };
-
+    // 切换到下一周
     const handleNextWeek = () => {
       if (currentWeek < MAX_WEEKS) {
         setCurrentWeek(currentWeek + 1);
       }
     };
 
+    // 处理周次选择
     const handleWeekSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
       setCurrentWeek(parseInt(e.target.value));
     };
@@ -486,7 +495,7 @@ const ScheduleResult = () => {
             onClick={handlePrevWeek}
             disabled={currentWeek <= 1}
           >
-            <IoChevronBack />
+            ←
           </button>
           <span className="week-display">第 {currentWeek} 周</span>
           <button
@@ -494,7 +503,7 @@ const ScheduleResult = () => {
             onClick={handleNextWeek}
             disabled={currentWeek >= MAX_WEEKS}
           >
-            <IoChevronForward />
+            →
           </button>
         </div>
         <div className="week-dropdown">
@@ -512,9 +521,34 @@ const ScheduleResult = () => {
       </div>
     );
   };
+
   // 切换周次
   const handleWeekChange = (week: number) => {
     setCurrentWeek(week);
+  };
+
+  // 格式化周次列表为易读字符串
+  const formatWeeks = (weeks: number[]): string => {
+    if (!weeks || weeks.length === 0) return '';
+
+    const sortedWeeks = [...weeks].sort((a, b) => a - b);
+
+    // 处理连续的周次，如[1,2,3,4] => "1-4"
+    const ranges: string[] = [];
+    let start = sortedWeeks[0];
+    let end = start;
+
+    for (let i = 1; i < sortedWeeks.length; i++) {
+      if (sortedWeeks[i] === end + 1) {
+        end = sortedWeeks[i];
+      } else {
+        ranges.push(start === end ? `${start}` : `${start}-${end}`);
+        start = end = sortedWeeks[i];
+      }
+    }
+
+    ranges.push(start === end ? `${start}` : `${start}-${end}`);
+    return ranges.join(', ');
   };
 
   // 打开课程详情
@@ -537,18 +571,23 @@ const ScheduleResult = () => {
   const getWeekScheduleMatrix = () => {
     const matrix: (CourseSchedule | null)[][] = Array(7).fill(null).map(() => Array(8).fill(null));
 
-    const filteredCourses = courseSchedules.filter(course =>
-    (searchQuery ?
-      course.courseName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.classroom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.courseId.toLowerCase().includes(searchQuery.toLowerCase())
-      : true)
-    );
+    const filteredCourses = courseSchedules.filter(course => {
+      // 文本搜索过滤
+      const matchesSearch = searchQuery ?
+        course.courseName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.classroom.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.courseId.toLowerCase().includes(searchQuery.toLowerCase())
+        : true;
 
-    // 首先填充矩阵中的所有课程位置
+      // 周次过滤 - 只显示在当前周次有课的记录
+      const matchesWeek = course.weeks.includes(currentWeek);
+
+      return matchesSearch && matchesWeek;
+    });
+
+    // 填充矩阵
     filteredCourses.forEach(course => {
       if (course.day >= 1 && course.day <= 7) {
-        // 对于每个课程，填充其所有占用的课节
         for (let period = course.startPeriod; period <= course.endPeriod && period < 8; period++) {
           matrix[course.day - 1][period] = course;
         }
@@ -560,19 +599,23 @@ const ScheduleResult = () => {
 
   // 获取学期视图课程数据
   const getSemesterScheduleCourses = () => {
-    // 所有课程都显示在学期视图中
-    return courseSchedules.filter(course =>
-    (searchQuery ?
-      course.courseName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.classroom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.courseId.toLowerCase().includes(searchQuery.toLowerCase())
-      : true)
-    );
+    return courseSchedules.filter(course => {
+      // 文本搜索过滤
+      const matchesSearch = searchQuery ?
+        course.courseName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.classroom.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.courseId.toLowerCase().includes(searchQuery.toLowerCase())
+        : true;
+
+      // 周次过滤，如果filterByWeek为true，则只显示当前周次的课程
+      const matchesWeek = filterByWeek ? course.weeks.includes(currentWeek) : true;
+
+      return matchesSearch && matchesWeek;
+    });
   };
 
   const weekScheduleMatrix = getWeekScheduleMatrix();
   const semesterScheduleCourses = getSemesterScheduleCourses();
-
 
   // 格式化slot字符串，使其更易读
   const formatSlot = (slot: string): string => {
@@ -626,10 +669,18 @@ const ScheduleResult = () => {
 
                 {[1, 2, 3, 4, 5, 6, 7].map(day => {
                   const course = weekScheduleMatrix[day - 1][period];
+
+                  // 如果当前单元格有课程，但不是该课程的起始节次，则跳过此单元格的渲染
+                  if (course && period > course.startPeriod && period <= course.endPeriod) {
+                    return null;
+                  }
+
                   return (
                     <td
                       key={day}
                       className={`course-cell ${course ? 'has-course' : ''}`}
+                      rowSpan={course && course.startPeriod !== course.endPeriod ?
+                        (course.endPeriod - course.startPeriod + 1) : 1}
                       onClick={course ? () => handleCourseClick(course) : undefined}
                     >
                       {course && (
@@ -637,6 +688,12 @@ const ScheduleResult = () => {
                           <div className="course-name">{course.courseName}</div>
                           <div className="course-classroom">{course.classroom}</div>
                           <div className="course-id">课程ID: {course.courseId}</div>
+                          {course.startPeriod !== course.endPeriod && (
+                            <div className="course-time">
+                              {getPeriodName(course.startPeriod, course.endPeriod)}
+                            </div>
+                          )}
+                          <div className="course-weeks">周次: {formatWeeks(course.weeks)}</div>
                         </div>
                       )}
                     </td>
@@ -677,7 +734,8 @@ const ScheduleResult = () => {
                   <ul className="semester-times-list">
                     {courses.map((course, idx) => (
                       <li key={idx}>
-                        {getDayName(course.day)} {getPeriodName(course.period)}
+                        {getDayName(course.day)} {getPeriodName(course.startPeriod, course.endPeriod)}
+                        <span className="course-weeks">({formatWeeks(course.weeks)}周)</span>
                       </li>
                     ))}
                   </ul>
@@ -790,6 +848,7 @@ const ScheduleResult = () => {
                   <th>课程名称</th>
                   <th>教室</th>
                   <th>上课时间</th>
+                  <th>上课周次</th>
                   <th>操作</th>
                 </tr>
               </thead>
@@ -805,6 +864,7 @@ const ScheduleResult = () => {
                         ? getPeriodName(course.startPeriod)
                         : `第${course.startPeriod + 1}-${course.endPeriod + 1}节`}
                     </td>
+                    <td>{formatWeeks(course.weeks)}周</td>
                     <td>
                       <button
                         className="view-btn"
@@ -915,7 +975,7 @@ const ScheduleResult = () => {
         });
       } else if (viewMode === 'overview') {
         // 总览视图导出
-        exportData.push(['课程ID', '课程名称', '教室', '星期', '节次']);
+        exportData.push(['课程ID', '课程名称', '教室', '星期', '节次', '周次']);
 
         courseSchedules.forEach(course => {
           exportData.push([
@@ -923,12 +983,13 @@ const ScheduleResult = () => {
             course.courseName,
             course.classroom,
             getDayName(course.day),
-            getPeriodName(course.period)
+            getPeriodName(course.startPeriod, course.endPeriod),
+            formatWeeks(course.weeks)
           ]);
         });
       } else {
         // 学期视图导出为课程列表
-        exportData.push(['课程ID', '课程名称', '教室', '星期', '节次']);
+        exportData.push(['课程ID', '课程名称', '教室', '星期', '节次', '周次']);
 
         const coursesToExport = semesterScheduleCourses;
         coursesToExport.forEach(course => {
@@ -937,7 +998,8 @@ const ScheduleResult = () => {
             course.courseName,
             course.classroom,
             getDayName(course.day),
-            getPeriodName(course.period)
+            getPeriodName(course.startPeriod, course.endPeriod),
+            formatWeeks(course.weeks)
           ]);
         });
       }
@@ -996,18 +1058,20 @@ const ScheduleResult = () => {
         });
       } else if (viewMode === 'overview') {
         // 总览视图导出
-        csvContent += '课程ID,课程名称,教室,星期,节次\n';
+        csvContent += '课程ID,课程名称,教室,星期,节次,周次\n';
 
         courseSchedules.forEach(course => {
-          csvContent += `"${course.courseId}","${course.courseName}","${course.classroom}","${getDayName(course.day)}","${getPeriodName(course.period)}"\n`;
+          csvContent += `"${course.courseId}","${course.courseName}","${course.classroom}","${getDayName(course.day)}",`;
+          csvContent += `"${course.startPeriod === course.endPeriod ? getPeriodName(course.startPeriod) : `第${course.startPeriod + 1}-${course.endPeriod + 1}节`}","${formatWeeks(course.weeks)}"\n`;
         });
       } else {
         // 学期视图导出为课程列表
-        csvContent += '课程ID,课程名称,教室,星期,节次\n';
+        csvContent += '课程ID,课程名称,教室,星期,节次,周次\n';
 
         const coursesToExport = semesterScheduleCourses;
         coursesToExport.forEach(course => {
-          csvContent += `"${course.courseId}","${course.courseName}","${course.classroom}","${getDayName(course.day)}","${getPeriodName(course.period)}"\n`;
+          csvContent += `"${course.courseId}","${course.courseName}","${course.classroom}","${getDayName(course.day)}",`;
+          csvContent += `"${course.startPeriod === course.endPeriod ? getPeriodName(course.startPeriod) : `第${course.startPeriod + 1}-${course.endPeriod + 1}节`}","${formatWeeks(course.weeks)}"\n`;
         });
       }
 
@@ -1254,6 +1318,10 @@ const ScheduleResult = () => {
                 <div className="info-row">
                   <span className="info-label">完整时间安排:</span>
                   <span className="info-value">{selectedCourse.fullSlot}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">上课周次:</span>
+                  <span className="info-value">{formatWeeks(selectedCourse.weeks)}</span>
                 </div>
               </div>
               <div className="course-actions">
