@@ -104,6 +104,7 @@ public class AssignmentController {
     }
 
     // 创建或更新排课
+    @Deprecated
     @PostMapping("/create")
     public ResponseEntity<ApiResponseDTO<AssignmentDTO>> createAssignment(@RequestBody AssignmentDTO assignmentDTO) {
         try {
@@ -180,7 +181,7 @@ public class AssignmentController {
         }
     }
 
-    //获取冲突的排课任务列表
+    // 获取冲突的排课任务列表
     @GetMapping("/conflicts")
     public ResponseEntity<ApiResponseDTO<List<AssignmentDTO>>> getConflicts() {
         try {
@@ -193,6 +194,7 @@ public class AssignmentController {
             return ResponseEntity.ok(ApiResponseDTO.error("获取冲突排课结果失败: " + e.getMessage()));
         }
     }
+
     // DTO转换为实体
     private Assignment convertToEntity(AssignmentDTO dto) {
         Assignment entity = new Assignment();
@@ -202,6 +204,7 @@ public class AssignmentController {
         entity.setClassRoomName(dto.getClassRoomName());
         entity.setSlot(dto.getSlot());
         entity.setTeachingClassId(dto.getTeachingClassId());
+        entity.setWeeks(dto.getWeeks());
         return entity;
     }
 

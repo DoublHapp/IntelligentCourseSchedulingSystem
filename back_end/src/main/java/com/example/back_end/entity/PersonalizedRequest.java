@@ -27,43 +27,12 @@ public class PersonalizedRequest {
     @Column(name = "user_identity")
     private String userIdentity; // 学生/教师
     
-    @Column(name = "request_type")
-    private String requestType; // 调整上课时间、更换教室等
-    
-    @Column(name = "course_id")
-    private String courseId;
-    
-    @Column(name = "course_name")
-    private String courseName;
-    
-    @Column(name = "original_time_slot")
-    private String originalTimeSlot; // 原时间段
-    
-    @Column(name = "preferred_time_slot")
-    private String preferredTimeSlot; // 期望时间段
+    @Column(name = "task_id")
+    private String taskId; // 课程ID
 
+    @Column(name = "prefer_day")
+    private String preferDay; // 偏好上课的日期
 
-    @Column(name = "not_time_request", length = 500)
-    private String notTimeRequest; // 非时间相关请求的整合信息
-    
-    @Column(name = "reason", length = 500)
-    private String reason; // 申请原因
-    
-    @Column(name = "status")
-    private String status; // pending, approved, rejected
-    
-    @Column(name = "submission_time")
-    private LocalDateTime submissionTime;
-    
-    @Column(name = "response_time")
-    private LocalDateTime responseTime;
-    
-    @Column(name = "response_message", length = 500)
-    private String responseMessage;
-    
-    @Column(name = "admin_id")
-    private Long adminId;
-    
-    @Column(name = "admin_name")
-    private String adminName;
+    @Column(name = "prefer_period")
+    private String preferPeriod; // 偏好上课的时段
 }

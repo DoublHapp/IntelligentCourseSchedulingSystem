@@ -29,25 +29,9 @@ public class PersonalizedRequestService {
     public List<PersonalizedRequest> findByUserId(Long userId) {
         return requestRepository.findByUserId(userId);
     }
-    
-    public List<PersonalizedRequest> findByStatus(String status) {
-        return requestRepository.findByStatus(status);
-    }
-    
-    public List<PersonalizedRequest> findByRequestType(String requestType) {
-        return requestRepository.findByRequestType(requestType);
-    }
-    
-    public List<PersonalizedRequest> findBySubmissionTimeBetween(LocalDateTime start, LocalDateTime end) {
-        return requestRepository.findBySubmissionTimeBetween(start, end);
-    }
-    
-    public List<PersonalizedRequest> findByAdminId(Long adminId) {
-        return requestRepository.findByAdminId(adminId);
-    }
-    
-    public List<PersonalizedRequest> findByUserIdAndStatus(Long userId, String status) {
-        return requestRepository.findByUserIdAndStatus(userId, status);
+
+    public List<PersonalizedRequest> findByTaskId(String taskId) {
+        return requestRepository.findByTaskId(taskId);
     }
     
     public PersonalizedRequest save(PersonalizedRequest request) {

@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AssignmentDTO {
-    private String courseId; // 课程ID，主键
+    private String courseId; // 课程ID
     private String courseName; // 课程名称
     private String classRoomId; // 教室ID
     private String classRoomName; // 教室名称

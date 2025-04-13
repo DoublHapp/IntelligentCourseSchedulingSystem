@@ -12,13 +12,9 @@ public interface PersonalizedRequestRepository extends JpaRepository<Personalize
     
     List<PersonalizedRequest> findByUserId(Long userId);
     
-    List<PersonalizedRequest> findByStatus(String status);
-    
-    List<PersonalizedRequest> findByRequestType(String requestType);
-    
-    List<PersonalizedRequest> findBySubmissionTimeBetween(LocalDateTime start, LocalDateTime end);
-    
-    List<PersonalizedRequest> findByAdminId(Long adminId);
-    
-    List<PersonalizedRequest> findByUserIdAndStatus(Long userId, String status);
+    List<PersonalizedRequest> findByTaskId(String taskId);
+
+    List<PersonalizedRequest> findByPreferDay(String preferDay);
+
+    List<PersonalizedRequest> findByPreferPeriod(String preferPeriod);
 }
