@@ -48,11 +48,11 @@ const Dashboard = () => {
             method: 'GET',
         }).then((response) => {
             if (!response.ok) {
-                alert('课表生成失败！：'+response.statusText);
+                alert('课表生成失败！：' + response.statusText);
             }
             else alert('课表生成成功！');
             console.log(response);
-            const data= response.json();
+            const data = response.json();
             console.log(data);
         })
     }
@@ -173,16 +173,13 @@ const Dashboard = () => {
 
                     {user.userIdentity === 'teacher' && (
                         <>
-                            <div className="menu-item">
-                                <h3>我的课程</h3>
-                                <p>管理教授的课程</p>
-                            </div>
+
                             <div
                                 className="menu-item highlight"
                                 onClick={navigateToPersonalizedRequest}
                             >
                                 <h3>个性化申请</h3>
-                                <p>申请调整课程时间安排</p>
+                                <p>申请调整课程时间等安排</p>
                             </div>
 
                             <div className="menu-item highlight"
@@ -196,16 +193,16 @@ const Dashboard = () => {
 
                     {user.userIdentity === 'student' && (
                         <>
-                            <div className="menu-item"
+                            <div className="menu-item hightlight"
                                 onClick={navigateToScheduleResult}>
-                                <h3>我的课表</h3>
-                                <p>查看个人课表安排</p>
+                                <h3>排课结果</h3>
+                                <p>查看课表安排结果</p>
                             </div>
                             <div className="menu-item highlight"
                                 onClick={navigateToPersonalizedRequest}
                             >
                                 <h3>个性化申请</h3>
-                                <p>申请调整课程时间安排</p>
+                                <p>申请调整课程时间等安排</p>
                             </div>
                         </>
                     )}

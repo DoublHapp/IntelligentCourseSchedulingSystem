@@ -64,7 +64,7 @@ const ManualScheduling = () => {
   const [selectedClassroom, setSelectedClassroom] = useState<number | null>(null);
   const [timeConflicts, setTimeConflicts] = useState<string[]>([]);
   const [error, setError] = useState<string>('');
-  
+
   useEffect(() => {
     // 检查用户是否已登录
     const userStr = localStorage.getItem('user');
@@ -75,7 +75,7 @@ const ManualScheduling = () => {
     try {
       const userData = JSON.parse(userStr);
       setUser(userData);
-      
+
       // 模拟从后端获取数据
       fetchTasks();
       fetchClassrooms();
@@ -85,7 +85,7 @@ const ManualScheduling = () => {
       navigate('/login');
     }
   }, [navigate]);
-  
+
   // 模拟从后端获取任务
   const fetchTasks = () => {
     // 这里应该是真实的API调用
@@ -124,10 +124,10 @@ const ManualScheduling = () => {
         status: 'scheduled'
       }
     ];
-    
+
     setTasks(mockTasks);
   };
-  
+
   // 模拟从后端获取教室
   const fetchClassrooms = () => {
     // 这里应该是真实的API调用
@@ -138,10 +138,10 @@ const ManualScheduling = () => {
       { id: 4, name: '教学楼B-202', buildingId: 2, buildingName: '教学楼B', capacity: 80, type: '普通教室' },
       { id: 5, name: '实验楼C-101', buildingId: 3, buildingName: '实验楼C', capacity: 40, type: '实验室' }
     ];
-    
+
     setClassrooms(mockClassrooms);
   };
-  
+
   // 处理任务选择
   const handleTaskSelect = (task: SchedulingTask) => {
     setSelectedTask(task);
@@ -153,63 +153,63 @@ const ManualScheduling = () => {
     setTimeConflicts([]);
     setError('');
   };
-  
+
   // 检查时间冲突
   const checkConflicts = () => {
     // 在真实应用中，这应该是一个API调用，检查所有可能的冲突
     // 这里只是模拟一些冲突逻辑
     if (selectedTask && selectedWeek && selectedDay && selectedPeriod !== null && selectedClassroom !== null) {
       const conflicts: string[] = [];
-      
+
       // 模拟冲突检查逻辑
       if (selectedTask.id === 1 && selectedWeek === 1 && selectedDay === 1 && selectedPeriod === 1) {
         conflicts.push('教师"张教授"在此时间已有其他课程');
       }
-      
+
       if (selectedClassroom === 3 && selectedWeek === 1 && selectedDay === 2) {
         conflicts.push('教室"教学楼B-201"在此时间已被占用');
       }
-      
+
       if (selectedTask.id === 2 && selectedWeek === 1 && selectedDay === 3 && selectedPeriod === 2) {
         conflicts.push('班级"计算机科学1班"在此时间已有其他课程');
       }
-      
+
       setTimeConflicts(conflicts);
       return conflicts.length === 0;
     }
     return false;
   };
-  
+
   // 提交排课
   const handleScheduleSubmit = () => {
     if (!selectedTask) {
       setError('请选择排课任务');
       return;
     }
-    
+
     if (selectedWeek < 1) {
       setError('请选择有效的周次');
       return;
     }
-    
+
     if (selectedDay < 1 || selectedDay > 7) {
       setError('请选择有效的星期');
       return;
     }
-    
+
     if (selectedPeriod === null) {
       setError('请选择课节');
       return;
     }
-    
+
     if (selectedClassroom === null) {
       setError('请选择教室');
       return;
     }
-    
+
     // 检查冲突
     const hasNoConflicts = checkConflicts();
-    
+
     if (hasNoConflicts) {
       // 在真实应用中，这里应该调用API保存排课结果
       const scheduleResult: ScheduleResult = {
@@ -223,44 +223,44 @@ const ManualScheduling = () => {
         classroomId: selectedClassroom,
         classroomName: classrooms.find(c => c.id === selectedClassroom)?.name || ''
       };
-      
+
       console.log('排课结果:', scheduleResult);
-      
+
       // 更新任务状态
-      const updatedTasks = tasks.map(task => 
-        task.id === selectedTask.id 
-          ? { ...task, status: 'scheduled' as const } 
+      const updatedTasks = tasks.map(task =>
+        task.id === selectedTask.id
+          ? { ...task, status: 'scheduled' as const }
           : task
       );
       setTasks(updatedTasks);
-      
+
       // 显示成功消息
       alert(`排课成功！\n课程: ${selectedTask.courseName}\n教师: ${selectedTask.teacherName}\n时间: 第${selectedWeek}周 星期${getDayName(selectedDay)} ${getPeriodName(selectedPeriod)}\n教室: ${scheduleResult.classroomName}`);
-      
+
       // 重置选中状态
       setSelectedTask(null);
     } else {
       setError('存在时间或资源冲突，请重新选择');
     }
   };
-  
+
   // 返回仪表盘
   const handleBackToDashboard = () => {
     navigate('/dashboard');
   };
-  
+
   // 获取星期名称
   const getDayName = (day: number) => {
     const dayNames = ['一', '二', '三', '四', '五', '六', '日'];
     return dayNames[day - 1] || day;
   };
-  
+
   // 获取课节名称
   const getPeriodName = (period: number) => {
     const periodNames = ['第1-2节', '第3-4节', '第5-6节', '第7-8节', '第9-10节', '第11-12节'];
     return periodNames[period] || `第${period + 1}节`;
   };
-  
+
   return (
     <div className="manual-scheduling">
       <header className="manual-scheduling-header">
@@ -269,13 +269,13 @@ const ManualScheduling = () => {
           <h1>手动排课</h1>
         </div>
       </header>
-      
+
       <div className="manual-scheduling-content">
         <div className="task-list">
           <h2>排课任务列表</h2>
           <div className="task-items">
             {tasks.map(task => (
-              <div 
+              <div
                 key={task.id}
                 className={`task-item ${selectedTask?.id === task.id ? 'selected' : ''} ${task.status === 'scheduled' ? 'scheduled' : ''}`}
                 onClick={() => handleTaskSelect(task)}
@@ -287,17 +287,17 @@ const ManualScheduling = () => {
                   <span>班级: {task.classNames.join(', ')}</span>
                 </div>
                 <div className="task-status">
-                  {task.status === 'pending' ? '待排课' : 
-                   task.status === 'scheduled' ? '已排课' : '已完成'}
+                  {task.status === 'pending' ? '待排课' :
+                    task.status === 'scheduled' ? '已排课' : '已完成'}
                 </div>
               </div>
             ))}
           </div>
         </div>
-        
+
         <div className="scheduling-panel">
           <h2>排课面板</h2>
-          
+
           {selectedTask ? (
             <div className="scheduling-form">
               <div className="selected-task-info">
@@ -317,12 +317,12 @@ const ManualScheduling = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="week">周次</label>
-                  <select 
-                    id="week" 
+                  <select
+                    id="week"
                     value={selectedWeek}
                     onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
                   >
@@ -331,11 +331,11 @@ const ManualScheduling = () => {
                     ))}
                   </select>
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="day">星期</label>
-                  <select 
-                    id="day" 
+                  <select
+                    id="day"
                     value={selectedDay}
                     onChange={(e) => setSelectedDay(parseInt(e.target.value))}
                   >
@@ -348,11 +348,11 @@ const ManualScheduling = () => {
                     <option value={7}>星期日</option>
                   </select>
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="period">课节</label>
-                  <select 
-                    id="period" 
+                  <select
+                    id="period"
                     value={selectedPeriod || ''}
                     onChange={(e) => setSelectedPeriod(parseInt(e.target.value))}
                   >
@@ -365,11 +365,11 @@ const ManualScheduling = () => {
                     <option value={5}>第11-12节</option>
                   </select>
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="classroom">教室</label>
-                  <select 
-                    id="classroom" 
+                  <select
+                    id="classroom"
                     value={selectedClassroom || ''}
                     onChange={(e) => setSelectedClassroom(parseInt(e.target.value))}
                   >
@@ -382,7 +382,7 @@ const ManualScheduling = () => {
                   </select>
                 </div>
               </div>
-              
+
               {timeConflicts.length > 0 && (
                 <div className="conflicts-warning">
                   <h4>存在冲突：</h4>
@@ -393,18 +393,18 @@ const ManualScheduling = () => {
                   </ul>
                 </div>
               )}
-              
+
               {error && <div className="error-message">{error}</div>}
-              
+
               <div className="scheduling-actions">
-                <button 
+                <button
                   className="check-button"
                   onClick={checkConflicts}
                 >
                   检查冲突
                 </button>
-                
-                <button 
+
+                <button
                   className="submit-button"
                   onClick={handleScheduleSubmit}
                 >
