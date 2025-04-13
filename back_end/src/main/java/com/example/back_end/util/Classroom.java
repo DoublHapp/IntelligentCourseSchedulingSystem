@@ -17,6 +17,7 @@ public class Classroom extends com.example.back_end.entity.Classroom {
         setClassroomName(classroom.getClassroomName());
         setMaximumClassSeatingCapacity(classroom.getMaximumClassSeatingCapacity());
         setClassroomType(classroom.getClassroomType());
+        setTeachingBuilding(classroom.getTeachingBuilding());
         this.timeSlots = new boolean[SLOTS_PER_DAY * DAYS_PER_WEEK * WEEKS_PER_SEMESTER];
         Arrays.fill(this.timeSlots, false);
     }

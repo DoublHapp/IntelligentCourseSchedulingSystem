@@ -274,15 +274,15 @@ public class GeneticAlgorithmScheduler {
             if (assignment.getSlot() != null) {
                 String[] parts = assignment.getSlot().split(",");
                 for (String part : parts) {
-                    String[] subParts= part.split(":");
+                    String[] subParts = part.split(":");
                     String[] timeParts = subParts[1].split("-");
-                    int day= Integer.parseInt(subParts[0]);
-                    int start = Integer.parseInt(timeParts[0]);
+                    int day = Integer.parseInt(subParts[0]) - 1;// 修正偏差
+                    int start = Integer.parseInt(timeParts[0]) - 1;// 修正偏差
                     int timeSlot = day * Schedule.slotsOfDay + start;
                     timeSlots.add(timeSlot);
                 }
             }
-            Task task=tasks.stream()
+            Task task = tasks.stream()
                     .filter(t -> t.getTeachingClassId().equals(assignment.getTeachingClassId()))
                     .findFirst().orElse(null);
             return new Assignment(classroom, timeSlots, task);
