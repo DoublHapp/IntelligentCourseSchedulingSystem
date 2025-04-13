@@ -203,12 +203,13 @@ const ScheduleResult = () => {
 
   // 计算课程统计数据
   const calculateCourseStatistics = (schedules: CourseSchedule[]) => {
-    // 统计课程总数
-    const totalCourses = schedules.length;
-
-    // 统计使用的教室数量
-    const uniqueClassrooms = new Set(schedules.map(course => course.classRoomId));
-    const totalClassrooms = uniqueClassrooms.size;
+    // 使用Set来确保只统计唯一的课程名称
+  const uniqueCourseIds = new Set(schedules.map(course => course.courseId));
+  const totalCourses = uniqueCourseIds.size; // 使用唯一课程ID的数量
+  
+  // 统计使用的教室数量
+  const uniqueClassrooms = new Set(schedules.map(course => course.classRoomId));
+  const totalClassrooms = uniqueClassrooms.size;
 
     // 统计各天的课程数量
     const coursesByDay = [0, 0, 0, 0, 0]; // 周一到周五
@@ -797,11 +798,11 @@ const ScheduleResult = () => {
         <div className="overview-stats">
           <div className="stat-card">
             <h3>课程总数</h3>
-            <div className="stat-value">{filteredCourses.length}</div>
+            <div className="stat-value">{courseStatistics.totalCourses}</div>
           </div>
           <div className="stat-card">
             <h3>教室数量</h3>
-            <div className="stat-value">{new Set(filteredCourses.map(c => c.classRoomId)).size}</div>
+            <div className="stat-value">{courseStatistics.totalClassrooms}</div>
           </div>
           <div className="stat-card">
             <h3>周课程分布</h3>

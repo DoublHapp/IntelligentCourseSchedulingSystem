@@ -4,10 +4,10 @@ import com.example.back_end.dto.ApiResponseDTO;
 import com.example.back_end.dto.PersonalizedRequestDTO;
 import com.example.back_end.entity.PersonalizedRequest;
 import com.example.back_end.service.PersonalizedRequestService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,6 +19,7 @@ public class PersonalizedRequestController {
 
     private final PersonalizedRequestService requestService;
 
+    
     public PersonalizedRequestController(PersonalizedRequestService requestService) {
         this.requestService = requestService;
     }
@@ -64,6 +65,14 @@ public class PersonalizedRequestController {
     public ResponseEntity<ApiResponseDTO<PersonalizedRequestDTO>> createRequest(
             @RequestBody PersonalizedRequest request) {
         try {
+            // 检查用户是否已对同一课程提交过申请
+            List<PersonalizedRequest> existingRequests = requestService.findByUserIdAndTaskId(
+                    request.getUserId(), request.getTaskId());
+            
+            if (!existingRequests.isEmpty()) {
+                return ResponseEntity.ok(ApiResponseDTO.error("您已经对该课程提交过申请，请勿重复提交"));
+            }
+            
             PersonalizedRequest savedRequest = requestService.save(request);
             return ResponseEntity.ok(ApiResponseDTO.success("创建申请成功", convertToDTO(savedRequest)));
         } catch (Exception e) {
@@ -88,47 +97,25 @@ public class PersonalizedRequestController {
             if (!existingRequest.getUserId().equals(request.getUserId())) {
                 return ResponseEntity.ok(ApiResponseDTO.error("无权修改此申请"));
             }
+            
+            // 如果更改了课程，检查新课程是否与其他申请冲突
+            if (!existingRequest.getTaskId().equals(request.getTaskId())) {
+                List<PersonalizedRequest> conflictRequests = requestService.findByUserIdAndTaskId(
+                        request.getUserId(), request.getTaskId());
+                
+                if (!conflictRequests.isEmpty()) {
+                    return ResponseEntity.ok(ApiResponseDTO.error("您已经对该课程提交过申请，请勿重复提交"));
+                }
+            }
 
-            // 保留原始ID和提交时间
+            // 保留原始ID
             request.setId(id);
 
-            // 打印请求详情，帮助调试
-            System.out.println("修改请求数据: " + request);
-
             // 保存更新后的请求
             PersonalizedRequest updatedRequest = requestService.save(request);
             return ResponseEntity.ok(ApiResponseDTO.success("修改申请成功", convertToDTO(updatedRequest)));
         } catch (Exception e) {
-            e.printStackTrace(); // 打印详细错误信息到控制台
-            return ResponseEntity.ok(ApiResponseDTO.error("修改申请失败: " + e.getMessage()));
-        }
-    }
-
-    @PostMapping("/update")
-    public ResponseEntity<ApiResponseDTO<PersonalizedRequestDTO>> updateRequestWithPost(
-            @RequestBody PersonalizedRequest request) {
-        try {
-            Optional<PersonalizedRequest> existingRequestOpt = requestService.findById(request.getId());
-            if (!existingRequestOpt.isPresent()) {
-                return ResponseEntity.ok(ApiResponseDTO.error("申请不存在"));
-            }
-
-            // 获取现有请求
-            PersonalizedRequest existingRequest = existingRequestOpt.get();
-
-            // 验证用户是否有权限修改
-            if (!existingRequest.getUserId().equals(request.getUserId())) {
-                return ResponseEntity.ok(ApiResponseDTO.error("无权修改此申请"));
-            }
-
-            // 打印请求详情，帮助调试
-            System.out.println("修改请求数据: " + request);
-
-            // 保存更新后的请求
-            PersonalizedRequest updatedRequest = requestService.save(request);
-            return ResponseEntity.ok(ApiResponseDTO.success("修改申请成功", convertToDTO(updatedRequest)));
-        } catch (Exception e) {
-            e.printStackTrace(); // 打印详细错误信息到控制台
+            e.printStackTrace();
             return ResponseEntity.ok(ApiResponseDTO.error("修改申请失败: " + e.getMessage()));
         }
     }

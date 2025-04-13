@@ -31,8 +31,8 @@ public class PersonalizedRequest {
     private String taskId; // 课程ID
 
     @Column(name = "prefer_day")
-    private String preferDay; // 偏好上课的日期
+    private String preferDay; // 偏好上课的日期：周一、周二、周三、周四、周五
 
     @Column(name = "prefer_period")
-    private String preferPeriod; // 偏好上课的时段
+    private String preferPeriod; // 偏好上课的时段：上午/下午
 }

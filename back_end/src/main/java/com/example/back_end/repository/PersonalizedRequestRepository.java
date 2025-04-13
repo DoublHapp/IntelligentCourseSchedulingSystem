@@ -4,7 +4,6 @@ import com.example.back_end.entity.PersonalizedRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -13,8 +12,7 @@ public interface PersonalizedRequestRepository extends JpaRepository<Personalize
     List<PersonalizedRequest> findByUserId(Long userId);
     
     List<PersonalizedRequest> findByTaskId(String taskId);
-
-    List<PersonalizedRequest> findByPreferDay(String preferDay);
-
-    List<PersonalizedRequest> findByPreferPeriod(String preferPeriod);
+    
+    // 新增方法：根据用户ID和任务ID查询申请
+    List<PersonalizedRequest> findByUserIdAndTaskId(Long userId, String taskId);
 }
