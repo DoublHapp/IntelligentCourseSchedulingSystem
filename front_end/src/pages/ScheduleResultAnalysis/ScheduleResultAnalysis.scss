@@ -244,6 +244,9 @@
                     .chart-box {
                         height: 300px;
                         position: relative;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
 
                         &.full-width {
                             height: 400px;

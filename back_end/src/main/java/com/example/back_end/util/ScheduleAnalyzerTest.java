@@ -1,13 +1,8 @@
 package com.example.back_end.util;
 
-import com.example.back_end.util.Assignment;
-import com.example.back_end.util.Classroom;
-import com.example.back_end.util.Task;
 import com.example.back_end.repository.AssignmentRepository;
 import com.example.back_end.repository.ClassroomRepository;
 import com.example.back_end.repository.TaskRepository;
-import com.example.back_end.util.Schedule;
-import com.example.back_end.util.ScheduleAnalyzer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,10 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Component
+@Deprecated
+// @Component
 public class ScheduleAnalyzerTest {
 
-    @Autowired
+    /* @Autowired
     private AssignmentRepository assignmentRepository;
     @Autowired
     private ClassroomRepository classroomRepository;
@@ -90,5 +86,5 @@ public class ScheduleAnalyzerTest {
         for (Map.Entry<String, Integer> entry : courseTypeDistribution.entrySet()) {
             System.out.println("   " + entry.getKey() + ": " + entry.getValue() + " 门课程");
         }
-    }
+    } */
 }

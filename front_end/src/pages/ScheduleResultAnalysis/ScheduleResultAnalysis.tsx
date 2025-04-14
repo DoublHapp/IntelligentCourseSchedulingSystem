@@ -74,7 +74,7 @@ interface AnalysisData {
             tension: number;
         }[];
     };
-    departmentComparison: {
+    /* departmentComparison: {
         labels: string[];
         datasets: {
             label: string;
@@ -87,7 +87,39 @@ interface AnalysisData {
             pointHoverBackgroundColor: string;
             pointHoverBorderColor: string;
         }[];
-    };
+    }; */
+    averageClassroomUtilization: number;
+    conflictRate: number;
+    totalTeachers: number;
+    totalCourses: number;
+}
+
+// API 响应类型
+interface ApiResponse<T> {
+    code: number;
+    message: string;
+    success: boolean;
+    data: T;
+}
+// 定义api返回类型
+/**
+ * public class AnalysisResult {
+    private double conflictRate;
+    private double averageClassroomUtilization;
+    private Map<String, int[]> weeklyScheduleDistribution;
+    private Map<String, Double> buildingUtilization;
+    private Map<String, Integer> courseTypeDistribution;
+}
+
+ */
+interface AnalysisData2 {
+    conflictRate: number;
+    averageClassroomUtilization: number;
+    weeklyScheduleDistribution: { [key: string]: number[] };
+    buildingUtilization: { [key: string]: number };
+    courseTypeDistribution: { [key: string]: number };
+    totalTeachers: number;
+    totalCourses: number;
 }
 
 interface ResourceOptimizationSuggestion {
@@ -140,9 +172,24 @@ const ScheduleAnalysis = () => {
     const fetchAnalysisData = async () => {
         setLoading(true);
         try {
-            // 在实际项目中，这里应该调用API获取真实数据
-            // 这里使用模拟数据进行演示
-            setTimeout(() => {
+            //尝试获取数据
+            const response = await fetch('http://localhost:8080/api/assignments/analysis');
+            if (!response.ok) {
+                throw new Error(`获取分析数据失败: ${response.status}`);
+            }
+
+            const result: ApiResponse<AnalysisData2> = await response.json();
+            console.log(result);
+            if (result.success && result.data) {
+                const {
+                    conflictRate,
+                    averageClassroomUtilization,
+                    weeklyScheduleDistribution,
+                    buildingUtilization,
+                    courseTypeDistribution,
+                    totalTeachers,
+                    totalCourses,
+                } = result.data;
                 // 模拟教师工作量数据
                 const teacherWorkloadData = {
                     labels: ['张教授', '李教授', '王教授', '赵教授', '钱教授', '孙教授', '周教授', '吴教授'],
@@ -156,62 +203,62 @@ const ScheduleAnalysis = () => {
                         }
                     ]
                 };
-
-                // 模拟教室使用率数据
+                // 常用颜色映射
+                const colorMap = {
+                    colors: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)'
+                    ],
+                    borderColors: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    getColor(index: number) {
+                        if(this.colors.length>index) return this.colors[index];
+                        else return `rgba(${index * 50}, ${index * 30}, ${index * 20}, 0.6)`;
+                    },
+                    getBorderColor(index: number) {
+                        if(this.borderColors.length>index) return this.borderColors[index];
+                        else return `rgba(${index * 50}, ${index * 30}, ${index * 20}, 1)`;
+                    }
+                };
+                // 教学楼使用率数据
                 const classroomUtilizationData = {
-                    labels: ['教学楼A', '教学楼B', '实验楼', '图书馆', '综合楼'],
+                    labels: Object.keys(buildingUtilization),
                     datasets: [{
-                        label: '教室使用率(%)',
-                        data: [78, 92, 65, 85, 72],
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.6)',
-                            'rgba(54, 162, 235, 0.6)',
-                            'rgba(255, 206, 86, 0.6)',
-                            'rgba(75, 192, 192, 0.6)',
-                            'rgba(153, 102, 255, 0.6)',
-                        ],
-                        borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(153, 102, 255, 1)',
-                        ],
+                        label: '教学楼使用率(%)',
+                        data: Object.values(buildingUtilization).map(value => value * 100),
+                        backgroundColor: Object.keys(buildingUtilization).map((_, index) => colorMap.getColor(index)),
+                        borderColor: Object.keys(buildingUtilization).map((_, index) => colorMap.getBorderColor(index)),
                         borderWidth: 1,
                     }]
                 };
-
-                // 模拟课程分布数据
+                // 课程分布数据
                 const courseDistributionData = {
-                    labels: ['必修课', '选修课', '实验课', '讨论课', '实践课'],
+                    labels: Object.keys(courseTypeDistribution),
                     datasets: [{
                         label: '课程数量',
-                        data: [45, 30, 15, 8, 12],
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.6)',
-                            'rgba(54, 162, 235, 0.6)',
-                            'rgba(255, 206, 86, 0.6)',
-                            'rgba(75, 192, 192, 0.6)',
-                            'rgba(153, 102, 255, 0.6)',
-                        ],
-                        borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(153, 102, 255, 1)',
-                        ],
+                        data: Object.values(courseTypeDistribution),
+                        backgroundColor: Object.keys(courseTypeDistribution).map((_, index) => colorMap.getColor(index)),
+                        borderColor: Object.keys(courseTypeDistribution).map((_, index) => colorMap.getBorderColor(index)),
                         borderWidth: 1,
                     }]
                 };
-
-                // 模拟周课程分布数据
+                // 周课程分布数据
                 const weeklyDistributionData = {
-                    labels: ['周一', '周二', '周三', '周四', '周五'],
+                    labels: Object.keys(weeklyScheduleDistribution),
                     datasets: [
                         {
                             label: '上午课程数',
-                            data: [24, 18, 30, 22, 16],
+                            data: Object.values(weeklyScheduleDistribution).map((item) => item[0]),
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',
                             borderColor: 'rgba(255, 99, 132, 1)',
                             borderWidth: 2,
@@ -220,7 +267,7 @@ const ScheduleAnalysis = () => {
                         },
                         {
                             label: '下午课程数',
-                            data: [18, 25, 20, 22, 15],
+                            data: Object.values(weeklyScheduleDistribution).map((item) => item[1]),
                             backgroundColor: 'rgba(54, 162, 235, 0.2)',
                             borderColor: 'rgba(54, 162, 235, 1)',
                             borderWidth: 2,
@@ -229,9 +276,8 @@ const ScheduleAnalysis = () => {
                         }
                     ]
                 };
-
                 // 模拟院系对比数据
-                const departmentComparisonData = {
+                /* const departmentComparisonData = {
                     labels: ['教师工作量', '教室使用率', '课程数量', '学生满意度', '排课均衡性', '资源利用率'],
                     datasets: [
                         {
@@ -257,15 +303,18 @@ const ScheduleAnalysis = () => {
                             pointHoverBorderColor: 'rgba(54, 162, 235, 1)'
                         }
                     ]
-                };
-
+                }; */
                 // 设置分析数据
                 setAnalysisData({
                     teacherWorkload: teacherWorkloadData,
                     classroomUtilization: classroomUtilizationData,
                     courseDistribution: courseDistributionData,
                     weeklyScheduleDistribution: weeklyDistributionData,
-                    departmentComparison: departmentComparisonData
+                    // departmentComparison: departmentComparisonData,
+                    averageClassroomUtilization: averageClassroomUtilization,
+                    conflictRate: conflictRate,
+                    totalTeachers: totalTeachers,
+                    totalCourses: totalCourses,
                 });
 
                 // 模拟优化建议数据
@@ -314,7 +363,9 @@ const ScheduleAnalysis = () => {
 
                 setOptimizationSuggestions(mockSuggestions);
                 setLoading(false);
-            }, 1000);
+            } else {
+                throw new Error('未获取到班级数据或数据为空');
+            };
         } catch (error) {
             console.error('获取分析数据失败:', error);
             setLoading(false);
@@ -374,7 +425,7 @@ const ScheduleAnalysis = () => {
                     <div className="loading">正在加载分析数据...</div>
                 ) : (
                     <>
-                        <div className="analysis-controls">
+                        {/* <div className="analysis-controls">
                             <div className="time-range-selector">
                                 <span>时间范围:</span>
                                 <div className="range-buttons">
@@ -413,9 +464,9 @@ const ScheduleAnalysis = () => {
                                     <option value="foreign">外国语学院</option>
                                 </select>
                             </div>
-                        </div>
+                        </div> */}
 
-                        <div className="analysis-tabs">
+                        {/* <div className="analysis-tabs">
                             <button
                                 className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('overview')}
@@ -446,7 +497,7 @@ const ScheduleAnalysis = () => {
                             >
                                 优化建议
                             </button>
-                        </div>
+                        </div> */}
 
                         <div className="analysis-content-container">
                             {/* 总览 */}
@@ -455,28 +506,32 @@ const ScheduleAnalysis = () => {
                                     <div className="summary-cards">
                                         <div className="summary-card">
                                             <h3>教师总数</h3>
-                                            <div className="card-value">42</div>
-                                            <div className="card-change positive">+3 较上学期</div>
+                                            <div className="card-value">{analysisData.totalTeachers}</div>
+                                            {/* <div className="card-change positive">+3 较上学期</div> */}
                                         </div>
                                         <div className="summary-card">
                                             <h3>课程总数</h3>
-                                            <div className="card-value">110</div>
-                                            <div className="card-change positive">+5 较上学期</div>
+                                            <div className="card-value">{analysisData.totalCourses}</div>
+                                            {/* <div className="card-change positive">+5 较上学期</div> */}
                                         </div>
                                         <div className="summary-card">
                                             <h3>教室使用率</h3>
-                                            <div className="card-value">78.5%</div>
-                                            <div className="card-change positive">+2.3% 较上学期</div>
+                                            <div className="card-value">{(
+                                                analysisData.averageClassroomUtilization * 100).toFixed(2) + '%'
+                                            }</div>
+                                            {/* <div className="card-change positive">+2.3% 较上学期</div> */}
                                         </div>
                                         <div className="summary-card">
                                             <h3>排课冲突率</h3>
-                                            <div className="card-value">0.5%</div>
-                                            <div className="card-change negative">-1.2% 较上学期</div>
+                                            <div className="card-value">{
+                                                (analysisData.conflictRate * 100).toFixed(2) + '%'
+                                            }</div>
+                                            {/* <div className="card-change negative">-1.2% 较上学期</div> */}
                                         </div>
                                     </div>
 
                                     <div className="chart-container chart-row">
-                                        <div className="chart-wrapper">
+                                        {/* <div className="chart-wrapper">
                                             <h3>院系资源对比分析</h3>
                                             <div className="chart-box">
                                                 <Radar
@@ -500,7 +555,7 @@ const ScheduleAnalysis = () => {
                                                     }}
                                                 />
                                             </div>
-                                        </div>
+                                        </div> */}
                                         <div className="chart-wrapper">
                                             <h3>周排课分布情况</h3>
                                             <div className="chart-box">

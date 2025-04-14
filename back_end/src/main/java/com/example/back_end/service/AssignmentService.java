@@ -2,9 +2,13 @@ package com.example.back_end.service;
 
 import org.springframework.stereotype.Service;
 import com.example.back_end.entity.Assignment;
-import com.example.back_end.entity.Task;
 import com.example.back_end.repository.AssignmentRepository;
+import com.example.back_end.util.AnalysisResult;
 import com.example.back_end.util.GeneticAlgorithmScheduler;
+import com.example.back_end.util.ScheduleAnalyzer;
+
+import lombok.AllArgsConstructor;
+
 import com.example.back_end.repository.ClassRepository;
 import com.example.back_end.repository.ClassroomRepository;
 import com.example.back_end.repository.TeacherRepository;
@@ -15,25 +19,14 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class AssignmentService {
     private GeneticAlgorithmScheduler geneticAlgorithmScheduler;
     private final AssignmentRepository assignmentRepository;
     private final ClassRepository classRepository;
     private final TeacherRepository teacherRepository;
     private final ClassroomRepository classroomRepository;
-
-    public AssignmentService(
-            GeneticAlgorithmScheduler geneticAlgorithmScheduler,
-            AssignmentRepository assignmentRepository,
-            ClassRepository classRepository,
-            TeacherRepository teacherRepository,
-            ClassroomRepository classroomRepository) {
-        this.geneticAlgorithmScheduler = geneticAlgorithmScheduler;
-        this.assignmentRepository = assignmentRepository;
-        this.classRepository = classRepository;
-        this.teacherRepository = teacherRepository;
-        this.classroomRepository = classroomRepository;
-    }
+    private final ScheduleAnalyzer scheduleAnalyzer;
 
     // 生成排课
     public void generateAssignments() {
@@ -124,5 +117,10 @@ public class AssignmentService {
         return geneticAlgorithmScheduler.getConflicts().stream()
                 .map(assignment -> assignment.toEntity())
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    // 进行排课结果分析
+    public AnalysisResult analyzeSchedule(){
+        return scheduleAnalyzer.analyzeSchedule();
     }
 }

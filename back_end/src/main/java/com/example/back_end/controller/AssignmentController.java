@@ -4,6 +4,8 @@ import com.example.back_end.dto.ApiResponseDTO;
 import com.example.back_end.dto.AssignmentDTO;
 import com.example.back_end.entity.Assignment;
 import com.example.back_end.service.AssignmentService;
+import com.example.back_end.util.AnalysisResult;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -195,6 +197,16 @@ public class AssignmentController {
         }
     }
 
+    // 进行排课结果分析
+    @GetMapping("/analysis")
+    public ResponseEntity<ApiResponseDTO<AnalysisResult>> analyzeAssignments() {
+        try {
+            AnalysisResult analysisResult = assignmentService.analyzeSchedule();
+            return ResponseEntity.ok(ApiResponseDTO.success("排课结果分析成功", analysisResult));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponseDTO.error("排课结果分析失败: " + e.getMessage()));
+        }
+    }
     // DTO转换为实体
     private Assignment convertToEntity(AssignmentDTO dto) {
         Assignment entity = new Assignment();
