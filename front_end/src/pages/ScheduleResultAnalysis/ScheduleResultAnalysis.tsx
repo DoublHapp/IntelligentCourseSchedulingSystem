@@ -222,11 +222,11 @@ const ScheduleAnalysis = () => {
                         'rgba(255, 159, 64, 1)'
                     ],
                     getColor(index: number) {
-                        if(this.colors.length>index) return this.colors[index];
+                        if (this.colors.length > index) return this.colors[index];
                         else return `rgba(${index * 50}, ${index * 30}, ${index * 20}, 0.6)`;
                     },
                     getBorderColor(index: number) {
-                        if(this.borderColors.length>index) return this.borderColors[index];
+                        if (this.borderColors.length > index) return this.borderColors[index];
                         else return `rgba(${index * 50}, ${index * 30}, ${index * 20}, 1)`;
                     }
                 };
@@ -620,7 +620,7 @@ const ScheduleAnalysis = () => {
                                             </div>
                                         </div>
                                     </div>
-
+                                    {/*
                                     <div className="insights-section">
                                         <h3>关键发现</h3>
                                         <div className="insights-container">
@@ -646,7 +646,7 @@ const ScheduleAnalysis = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div>*/}
                                 </div>
                             )}
 
